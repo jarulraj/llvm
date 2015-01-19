@@ -1,0 +1,8 @@
+# LLVM output
+a.out
+out
+*.bc
+*.ll
+*.s
+*.o
+*.so
