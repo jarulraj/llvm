@@ -1,5 +1,5 @@
 // 15-745 S15 Assignment 1: FunctionInfo.cpp
-// Group: bovik, bovik2
+// Group: jarulraj, nkshah
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "llvm/Pass.h"
@@ -15,61 +15,81 @@ using namespace llvm;
 
 namespace {
 
-class FunctionInfo : public ModulePass {
+        class FunctionInfo : public ModulePass {
 
-  // Output the function information to standard out.
-  void printFunctionInfo(Module& M) {
-    outs() << "Module " << M.getModuleIdentifier().c_str() << "\n";
-    outs() << "Name,\tArgs,\tCalls,\tBlocks,\tInsns\n";
-    // TODO: Print out information about each function in this format.
-    bool is_var_arg = false;
-    size_t arg_count = 0;
-    size_t callsite_count = 0;
-    size_t block_count = 0;
-    size_t instruction_count = 0;
-    outs() << "function_name" << ",\t";
-    if (is_var_arg) {
-      outs() << "*,\t";
-    } else {
-      outs() << arg_count << ",\t";
-    }
-    outs() << callsite_count << ",\t" << block_count << ",\t"
-        << instruction_count << "\n";
-  }
+                // Output the function information to standard out.
+                void printFunctionInfo(Module& M) {
+                        outs() << "Module " << M.getModuleIdentifier().c_str() << "\n";
+                        outs() << "Name,\tArgs,\tCalls,\tBlocks,\tInsns\n";
 
-public:
+                        // Print info about each function
+                        for (Module::iterator MI = M.begin(), ME = M.end(); MI != ME; ++MI) {
+                                runOnFunction(*MI);
+                        }
+                }
 
-  static char ID;
+        public:
 
-  FunctionInfo() : ModulePass(ID) { }
+                static char ID;
 
-  ~FunctionInfo() { }
+                FunctionInfo() : ModulePass(ID) { }
 
-  // We don't modify the program, so we preserve all analyses
-  virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-    AU.setPreservesAll();
-  }
+                ~FunctionInfo() { }
 
-  virtual bool runOnFunction(Function &F) {
-    // TODO: implement this.
-    return false;
-  }
-  
-  virtual bool runOnModule(Module& M) {
-    errs() << "15745 Function Information Pass\n"; // TODO: remove this.
-    for (Module::iterator MI = M.begin(), ME = M.end(); MI != ME; ++MI) {
-      runOnFunction(*MI);
-    }
-    // TODO: uncomment this.
-    // printFunctionInfo(M);
-    return false;
-  }
+                // We don't modify the program, so we preserve all analyses
+                virtual void getAnalysisUsage(AnalysisUsage &AU) const {
+                        AU.setPreservesAll();
+                }
 
-};
+                virtual bool runOnFunction(Function &F) {
+                        bool is_var_arg = false;
+                        size_t arg_count = 0;
+                        size_t callsite_count = 0;
+                        size_t block_count = 0;
+                        size_t instruction_count = 0;
+
+                        // Get name
+                        std::string function_name = F.getName();
+
+                        // check if var arg
+                        is_var_arg = F.isVarArg();
+
+                        // # of fixed args
+                        arg_count = F.arg_size();
+
+                        // count # of direct call sites
+                        callsite_count = F.getNumUses();
+
+                        // get # of basic blocks
+                        block_count = F.size();
+
+                        // count # of instructions
+                        for (Function::iterator FI = F.begin(), FE = F.end(); FI != FE; ++FI) {
+                                instruction_count += FI->size();
+                        }
+
+                        outs() << function_name  << ",\t";
+                        if (is_var_arg) {
+                                outs() << "*,\t";
+                        } else {
+                                outs() << arg_count << ",\t";
+                        }
+                        outs() << callsite_count << ",\t" << block_count << ",\t"
+                               << instruction_count << "\n";
+
+                        return false;
+                }
+
+                virtual bool runOnModule(Module& M) {
+                        printFunctionInfo(M);
+                        return false;
+                }
+
+        };
 
 // LLVM uses the address of this static member to identify the pass, so the
 // initialization value is unimportant.
-char FunctionInfo::ID = 0;
-RegisterPass<FunctionInfo> X("function-info", "15745: Function Information");
+        char FunctionInfo::ID = 0;
+        RegisterPass<FunctionInfo> X("function-info", "15745: Function Information");
 
 }

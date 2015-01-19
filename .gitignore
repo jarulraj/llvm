@@ -6,3 +6,9 @@ out
 *.s
 *.o
 *.so
+
+# TAGS
+GTAGS
+GRTAGS
+GPATH
+GSYMS
