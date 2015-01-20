@@ -48,26 +48,21 @@ namespace {
                         size_t block_count = 0;
                         size_t instruction_count = 0;
 
-                        // Get name
-                        std::string function_name = F.getName();
+			// Get all the required information
+                        std::string function_name = F.getName(); // Get name
+                        is_var_arg = F.isVarArg(); // Check if # arguments is variable
+			if (!is_var_arg) {
+	                        arg_count = F.arg_size(); // # fixed args
+	                }
+                        callsite_count = F.getNumUses(); // # direct call sites
+                        block_count = F.size(); // # basic blocks
 
-                        // check if var arg
-                        is_var_arg = F.isVarArg();
-
-                        // # of fixed args
-                        arg_count = F.arg_size();
-
-                        // count # of direct call sites
-                        callsite_count = F.getNumUses();
-
-                        // get # of basic blocks
-                        block_count = F.size();
-
-                        // count # of instructions
+                        // # instructions
                         for (Function::iterator FI = F.begin(), FE = F.end(); FI != FE; ++FI) {
                                 instruction_count += FI->size();
                         }
 
+			// Print Information
                         outs() << function_name  << ",\t";
                         if (is_var_arg) {
                                 outs() << "*,\t";
