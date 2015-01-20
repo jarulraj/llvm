@@ -158,11 +158,14 @@ namespace
 
 				for(Function::iterator FI = F.begin(), FE = F.end(); FI != FE; ++FI) {
 					BasicBlock& B(*FI);
+					DBG(outs() << "ORIGINAL CODE:\n\n");
 					DBG(B.dump());
+					DBG(outs() << "\nOPTIMIZATIONS PERFORMED:\n\n");
 					algebraic_optimizations(B);
 					constant_folding(B);
 					strength_reduction(B);
-					B.dump();
+					DBG(outs() << "\nFINAL CODE:\n\n");
+					DBG(B.dump());
 				}
 			}
 			
