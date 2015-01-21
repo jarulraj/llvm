@@ -48,12 +48,12 @@ namespace {
                         size_t block_count = 0;
                         size_t instruction_count = 0;
 
-			// Get all the required information
+                        // Get all the required information
                         std::string function_name = F.getName(); // Get name
                         is_var_arg = F.isVarArg(); // Check if # arguments is variable
-			if (!is_var_arg) {
-	                        arg_count = F.arg_size(); // # fixed args
-	                }
+                        if (!is_var_arg) {
+                                arg_count = F.arg_size(); // # fixed args
+                        }
                         callsite_count = F.getNumUses(); // # direct call sites
                         block_count = F.size(); // # basic blocks
 
@@ -62,7 +62,7 @@ namespace {
                                 instruction_count += FI->size();
                         }
 
-			// Print Information
+                        // Print Information
                         outs() << function_name  << ",\t";
                         if (is_var_arg) {
                                 outs() << "*,\t";
