@@ -35,6 +35,21 @@ namespace
 		int numStrengthReds;
 	} LocalOptsInfo;
 	
+	// If n is a power of 2, then return that power, else return -1
+	int64_t find_log (int64_t n) 
+	{
+		if (n <= 0) return -1;
+		int64_t res = 0;
+		while (((n & 1) == 0) && n > 1) { // While n is even and more than 1 
+			n >>= 1;
+			++res;
+		}
+		if (n == 1)
+			return res;
+		else
+			return -1;	
+	}
+	
 	class LocalOpts : public ModulePass
 	{
 
@@ -47,7 +62,7 @@ namespace
 		void constant_folding(BasicBlock& B)
 		{
 			// Iterate over all instructions
-			for(BasicBlock::iterator BI = B.begin(), BE = B.end(); BI != BE; ) {
+			for(BasicBlock::iterator BI = B.begin(); BI != B.end(); ) {
 				Instruction& inst(*BI);
 				bool inst_removed = false;	// Is this instruction removed due to constant folding?
 				
@@ -56,7 +71,7 @@ namespace
 					BinaryOperator *bop((BinaryOperator*)&inst);
 					Value *val1(bop->getOperand(0));	// Get the first and the second operand (as values)
 					Value *val2(bop->getOperand(1));
-					if(!ConstantInt::classof(val1) || !ConstantInt::classof(val2)) continue; // The values are not integers, then there's nothing to do!
+					if(!ConstantInt::classof(val1) || !ConstantInt::classof(val2)) {++BI; continue;} // The values are not integers, then there's nothing to do!
 					ConstantInt *ci1 = dyn_cast<ConstantInt>(val1);	// Get constants from values
 					ConstantInt *ci2 = dyn_cast<ConstantInt>(val2);
 
@@ -127,6 +142,60 @@ namespace
 		// Strength Reduction
 		void strength_reduction(BasicBlock& B)
 		{
+			// Iterate over all instructions
+			for(BasicBlock::iterator BI = B.begin(), BE = B.end(); BI != BE; ) {
+				Instruction& inst(*BI);
+				bool inst_removed = false;	// Is this instruction removed due to strength reduction
+				
+				// In binary operations
+				if(BinaryOperator::classof(&inst)) {
+					BinaryOperator *bop((BinaryOperator*)&inst);
+					Value *val1(bop->getOperand(0));	// Get the first and the second operand (as values)
+					Value *val2(bop->getOperand(1));
+
+					switch (bop->getOpcode()) {	// Switch on the operator
+					
+					case Instruction::Mul: 	//TODO: Figure out how to replace x*3 or 3*x by x<<1 + x
+						// x * 2^k, 2^k * x ==> (x << k)
+						if (ConstantInt::classof(val1)) {		// Make sure the constant value, if any, is val2
+							Value *t(val1);
+							val1 = val2;
+							val2 = t;
+						}
+						
+						if (ConstantInt::classof(val2)) {	// Now if it is really a constant
+							ConstantInt *ci2 = dyn_cast<ConstantInt>(val2);
+							int64_t log_i = find_log(ci2->getSExtValue());
+							if (log_i >= 0) {	// We return -1 if the constant is not a power of 2
+								BinaryOperator *modified_inst(BinaryOperator::Create(Instruction::Shl, val1, get_const(ci2->getType(), log_i)));
+								DBG(outs() << "Replacing: " << val1->getName() << " * " << ci2->getSExtValue() << " with " << val1->getName() << " << " << log_i << "\n");
+								ReplaceInstWithInst(B.getInstList(),BI,modified_inst);
+								LocalOptsInfo.numStrengthReds++;
+							}
+						}
+						break;
+
+					case Instruction::SDiv:
+						// x / 2^k ==> (x >> k)
+						if (ConstantInt::classof(val2)) {	// If val2 is a constant
+							ConstantInt *ci2 = dyn_cast<ConstantInt>(val2);
+							int64_t log_i = find_log(ci2->getSExtValue());
+							if (log_i >= 0) {	// If it is a power of 2
+								BinaryOperator *modified_inst(BinaryOperator::Create(Instruction::LShr, val1, get_const(ci2->getType(), log_i)));
+								DBG(outs() << "Replacing: " << val1->getName() << " / " << ci2->getSExtValue() << " with " << val1->getName() << " >> " << log_i << "\n");
+								ReplaceInstWithInst(B.getInstList(),BI,modified_inst);
+								LocalOptsInfo.numStrengthReds++;
+							}
+						}
+						break;
+
+					}
+				}
+				
+				// Increment the iterator only if the current instruction was not removed. 
+				// This is chosen instead of doing --BI when we remove the instruction because --BI crashes when BI is at B.begin()
+				if (!inst_removed) ++BI;	
+			}
 		}
 		
 		// Printing summary statistics
