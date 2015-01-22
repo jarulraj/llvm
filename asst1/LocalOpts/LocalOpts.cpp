@@ -38,12 +38,15 @@ namespace
         // If n is a power of 2, then return that power, else return -1
         int64_t find_log (int64_t n)
         {
-                if (n <= 0) return -1;
+                if (n <= 0)
+                        return -1;
+
                 int64_t res = 0;
                 while (((n & 1) == 0) && n > 1) { // While n is even and more than 1
                         n >>= 1;
                         ++res;
                 }
+
                 if (n == 1)
                         return res;
                 else
@@ -62,80 +65,69 @@ namespace
                 void constant_folding(BasicBlock& B)
                 {
                         // Iterate over all instructions
-                        for(BasicBlock::iterator BI = B.begin(); BI != B.end(); ) {
+                        for(BasicBlock::iterator BI = B.begin(); BI != B.end(); )
+                        {
                                 Instruction& inst(*BI);
+                                bool known_inst = true;
                                 bool inst_removed = false;	// Is this instruction removed due to constant folding?
 
                                 // In binary operations
-                                if(BinaryOperator::classof(&inst)) {
+                                if(BinaryOperator::classof(&inst))
+                                {
                                         BinaryOperator *bop((BinaryOperator*)&inst);
                                         Value *val1(bop->getOperand(0));	// Get the first and the second operand (as values)
                                         Value *val2(bop->getOperand(1));
-                                        if(!ConstantInt::classof(val1) || !ConstantInt::classof(val2)) {++BI; continue;} // The values are not integers, then there's nothing to do!
+
+                                        if(!ConstantInt::classof(val1) || !ConstantInt::classof(val2)) {++BI; continue;} // The values are not const integers, then there's nothing to do!
+
                                         ConstantInt *ci1 = dyn_cast<ConstantInt>(val1);	// Get constants from values
                                         ConstantInt *ci2 = dyn_cast<ConstantInt>(val2);
+                                        ConstantInt *ci_final;
 
-                                        switch (bop->getOpcode()) {	// Fold depending on what operator is used
+                                        switch (bop->getOpcode()) // Fold depending on what operator is used
+                                        {
 
-                                        case Instruction::Add: {	// Addition
-                                                ConstantInt *ci_final(get_const(ci1->getType(), (ci1->getSExtValue()) + (ci2->getSExtValue())));
-                                                DBG(outs() << "ConstantFolding: " << ci1->getSExtValue() << " + " << ci2->getSExtValue() << " = " << ci_final->getSExtValue() << "\n");
-                                                ReplaceInstWithValue(B.getInstList(),BI,ci_final);
-                                                inst_removed = true;
-                                                LocalOptsInfo.numConstantFolds++;
-                                        }
+                                        case Instruction::Add:  // Addition
+                                                ci_final = get_const(ci1->getType(), (ci1->getSExtValue()) + (ci2->getSExtValue()));
+                                                break;
+                                        case Instruction::Sub: // Subtraction
+                                                ci_final = get_const(ci1->getType(), (ci1->getSExtValue()) - (ci2->getSExtValue()));
+                                                break;
+                                        case Instruction::Mul: // Multiplication
+                                                ci_final = get_const(ci1->getType(), (ci1->getSExtValue()) * (ci2->getSExtValue()));
+                                                break;
+                                        case Instruction::SDiv: // Division
+                                                ci_final = get_const(ci1->getType(), (ci1->getSExtValue()) / (ci2->getSExtValue()));
+                                                break;
+                                        case Instruction::Shl:  // Left Shift
+                                                ci_final = get_const(ci1->getType(), (ci1->getSExtValue()) << (ci2->getSExtValue()));
+                                                break;
+                                        case Instruction::LShr: // (Logical) Right Shift
+                                                ci_final = get_const(ci1->getType(), (ci1->getSExtValue()) >> (ci2->getSExtValue()));
                                                 break;
 
-                                        case Instruction::Sub: {	// Subtraction
-                                                ConstantInt *ci_final(get_const(ci1->getType(), (ci1->getSExtValue()) - (ci2->getSExtValue())));
-                                                DBG(outs() << "ConstantFolding: " << ci1->getSExtValue() << " - " << ci2->getSExtValue() << " = " << ci_final->getSExtValue() << "\n");
-                                                ReplaceInstWithValue(B.getInstList(),BI,ci_final);
-                                                inst_removed = true;
-                                                LocalOptsInfo.numConstantFolds++;
-                                        }
+                                        default:
+                                                // Unknown instruction
+                                                known_inst = false;
                                                 break;
+                                        }
 
-                                        case Instruction::Mul: {	// Multiplication
-                                                ConstantInt *ci_final(get_const(ci1->getType(), (ci1->getSExtValue()) * (ci2->getSExtValue())));
-                                                DBG(outs() << "ConstantFolding: " << ci1->getSExtValue() << " * " << ci2->getSExtValue() << " = " << ci_final->getSExtValue() << "\n");
+                                        // Known instruction
+                                        if(known_inst)
+                                        {
+                                                DBG(outs() << "ConstantFolding: " << ci1->getSExtValue() << " " << bop->getOpcodeName() << " "  << ci2->getSExtValue()
+                                                    << " = " << ci_final->getSExtValue() << "\n");
                                                 ReplaceInstWithValue(B.getInstList(),BI,ci_final);
-                                                inst_removed = true;
                                                 LocalOptsInfo.numConstantFolds++;
+                                                inst_removed = true;
                                         }
-                                                break;
 
-                                        case Instruction::SDiv: {	// Division
-                                                ConstantInt *ci_final(get_const(ci1->getType(), (ci1->getSExtValue()) / (ci2->getSExtValue())));
-                                                DBG(outs() << "ConstantFolding: " << ci1->getSExtValue() << " / " << ci2->getSExtValue() << " = " << ci_final->getSExtValue() << "\n");
-                                                ReplaceInstWithValue(B.getInstList(),BI,ci_final);
-                                                inst_removed = true;
-                                                LocalOptsInfo.numConstantFolds++;
-                                        }
-                                                break;
-
-                                        case Instruction::Shl: {	// Left Shift
-                                                ConstantInt *ci_final(get_const(ci1->getType(), (ci1->getSExtValue()) << (ci2->getSExtValue())));
-                                                DBG(outs() << "ConstantFolding: " << ci1->getSExtValue() << " << " << ci2->getSExtValue() << " = " << ci_final->getSExtValue() << "\n");
-                                                ReplaceInstWithValue(B.getInstList(),BI,ci_final);
-                                                inst_removed = true;
-                                                LocalOptsInfo.numConstantFolds++;
-                                        }
-                                                break;
-
-                                        case Instruction::LShr: {	// (Logical) Right Shift
-                                                ConstantInt *ci_final(get_const(ci1->getType(), (ci1->getSExtValue()) >> (ci2->getSExtValue())));
-                                                DBG(outs() << "ConstantFolding: " << ci1->getSExtValue() << " >> " << ci2->getSExtValue() << " = " << ci_final->getSExtValue() << "\n");
-                                                ReplaceInstWithValue(B.getInstList(),BI,ci_final);
-                                                inst_removed = true;
-                                                LocalOptsInfo.numConstantFolds++;
-                                        }
-                                                break;
-                                        }
                                 }
 
                                 // Increment the iterator only if the current instruction was not removed.
                                 // This is chosen instead of doing --BI when we remove the instruction because --BI crashes when BI is at B.begin()
-                                if (!inst_removed) ++BI;
+                                if (!inst_removed)
+                                        ++BI;
                         }
                 }
 
@@ -189,6 +181,9 @@ namespace
                                                 }
                                                 break;
 
+                                        default:
+                                                // Unhandled instruction
+                                                break;
                                         }
                                 }
 

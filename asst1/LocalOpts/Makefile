@@ -1,7 +1,7 @@
 all: LocalOpts.so inputs
 	
 CXX = clang
-CXXFLAGS = -rdynamic $(shell llvm-config --cxxflags) -g -O0
+CXXFLAGS = $(shell llvm-config --cxxflags) -fcolor-diagnostics -g -O0
 OPT = opt
 
 %.so: %.o

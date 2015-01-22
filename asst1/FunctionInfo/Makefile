@@ -1,6 +1,6 @@
 all: FunctionInfo.so
 
-CXXFLAGS = -rdynamic $(shell llvm-config --cxxflags) -g -O0
+CXXFLAGS = -rdynamic $(shell llvm-config --cxxflags) -fcolor-diagnostics -g -O0
 
 %.so: %.o
 	$(CXX) -dylib -shared $^ -o $@
