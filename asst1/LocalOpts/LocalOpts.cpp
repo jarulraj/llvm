@@ -54,20 +54,6 @@ namespace
                         return -1;
         }
 
-        // Return iterator pointing to next instruction to be processed
-        BasicBlock::iterator replaceAllUsesWithValAndDelete(BasicBlock& B, BasicBlock::iterator BI, Value* val)
-        {
-                BasicBlock::iterator BP ; // Previous instruction
-
-                BP = BI;
-
-                ++BI;
-                BP->replaceAllUsesWith(val);
-                BP->eraseFromParent();
-
-                return BI;
-        }
-
         class LocalOpts : public ModulePass
         {
 
@@ -81,9 +67,8 @@ namespace
                                 bool inst_removed = false;   // Is inst removed ?
 
                                 // In binary operations
-                                if(BinaryOperator::classof(&inst))
+                                if(BinaryOperator *bop = dyn_cast<BinaryOperator>(&inst))
                                 {
-                                        BinaryOperator *bop((BinaryOperator*)&inst);
                                         Value *val1(bop->getOperand(0));	// Get the first and the second operand (as values)
                                         Value *val2(bop->getOperand(1));
                                         IntegerType *itype = dyn_cast<IntegerType>(BI->getType());
@@ -105,8 +90,7 @@ namespace
                                                         if(ci->getValue().eq(ap_int_zero))
                                                         {
                                                                 DBG(outs()<<"AlgebraicIdentities :: 0 + x = 0 :: Val 1 : " << *val1 << " Val 2 : "<< ci->getValue() << "\n");
-
-                                                                BI = replaceAllUsesWithValAndDelete(B, BI, val2);
+																ReplaceInstWithValue(B.getInstList(),BI,val2);
                                                                 inst_removed = true;
                                                                 LocalOptsInfo.numAlgebraicOpts++;
                                                         }
@@ -121,7 +105,7 @@ namespace
                                                         {
                                                                 DBG(outs()<<"AlgebraicIdentities :: x + 0 = x :: Val 1 : " << ci->getValue() << " Val 2 : "<< *val2 << "\n");
 
-                                                                BI = replaceAllUsesWithValAndDelete(B, BI, val1);
+																ReplaceInstWithValue(B.getInstList(),BI,val1);
                                                                 inst_removed = true;
                                                                 LocalOptsInfo.numAlgebraicOpts++;
                                                         }
@@ -153,9 +137,8 @@ namespace
                                 bool inst_removed = false;	// Is this instruction removed
 
                                 // In binary operations
-                                if(BinaryOperator::classof(&inst))
+                                if(BinaryOperator *bop = dyn_cast<BinaryOperator>(&inst))
                                 {
-                                        BinaryOperator *bop((BinaryOperator*)&inst);
                                         Value *val1(bop->getOperand(0));	// Get the first and the second operand (as values)
                                         Value *val2(bop->getOperand(1));
 
@@ -225,8 +208,8 @@ namespace
                                 bool inst_removed = false;	// Is this instruction removed due to strength reduction
 
                                 // In binary operations
-                                if(BinaryOperator::classof(&inst)) {
-                                        BinaryOperator *bop((BinaryOperator*)&inst);
+                                if(BinaryOperator *bop = dyn_cast<BinaryOperator>(&inst)) 
+                                {
                                         Value *val1(bop->getOperand(0));	// Get the first and the second operand (as values)
                                         Value *val2(bop->getOperand(1));
 
@@ -322,8 +305,8 @@ namespace
                                         // In the debug mode, print every optimization performed to stdout
                                         DBG(outs() << "\nOPTIMIZATIONS PERFORMED:\n\n");
                                         algebraic_optimizations(B);
-                                        constant_folding(B);
-                                        strength_reduction(B);
+                                        //constant_folding(B);
+                                        //strength_reduction(B);
 
                                         // In the debug mode, print the final code to stdout
                                         DBG(outs() << "\nFINAL CODE:\n\n");

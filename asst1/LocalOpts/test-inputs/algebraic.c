@@ -1,5 +1,8 @@
 int compute (int a, int b)
 {
+  int x = 0+a;
+  int y = b+0;
+  int z = x+y;
   int result = (a/a);
 
   result += 0;
