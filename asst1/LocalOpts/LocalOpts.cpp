@@ -59,28 +59,14 @@ namespace
         {
                 BasicBlock::iterator BP ; // Previous instruction
 
-                // First / Intermediate element
-                if(BI != B.end())
-                {
-                        //outs() << "First / Middle" << "\n";
+                BP = BI;
 
-                        BP = BI;
-                        ++BI;
-                        BP->replaceAllUsesWith(val);
-                        BP->eraseFromParent();
-                        return BI;
-                }
-                // Last element
-                else
-                {
-                        //outs() << "Last" << "\n";
+                ++BI;
+                BP->replaceAllUsesWith(val);
+                BP->eraseFromParent();
 
-                        BI->replaceAllUsesWith(val);
-                        BI->eraseFromParent();
-                        return B.end();
-                }
+                return BI;
         }
-
 
         class LocalOpts : public ModulePass
         {
