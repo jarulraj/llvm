@@ -16,6 +16,7 @@ using namespace llvm;
 // Get constant from value
 #define get_const(t,val) ConstantInt::get((IntegerType*)t,val)
 
+
 // DEBUG mode: Prints all the optimizations performed to stdout, and the original and final code so we can compare!
 #define DEBUG 1
 
@@ -53,12 +54,106 @@ namespace
                         return -1;
         }
 
+        // Return iterator pointing to next instruction to be processed
+        BasicBlock::iterator replaceAllUsesWithValAndDelete(BasicBlock& B, BasicBlock::iterator BI, Value* val)
+        {
+                BasicBlock::iterator BP ; // Previous instruction
+
+                // First / Intermediate element
+                if(BI != B.end())
+                {
+                        //outs() << "First / Middle" << "\n";
+
+                        BP = BI;
+                        ++BI;
+                        BP->replaceAllUsesWith(val);
+                        BP->eraseFromParent();
+                        return BI;
+                }
+                // Last element
+                else
+                {
+                        //outs() << "Last" << "\n";
+
+                        BI->replaceAllUsesWith(val);
+                        BI->eraseFromParent();
+                        return B.end();
+                }
+        }
+
+
         class LocalOpts : public ModulePass
         {
 
                 // Algebraic Optimizations
                 void algebraic_optimizations(BasicBlock& B)
                 {
+                        // Iterate over all instructions
+                        for(BasicBlock::iterator BI = B.begin(); BI != B.end(); )
+                        {
+                                Instruction& inst(*BI);
+                                bool inst_removed = false;   // Is inst removed ?
+
+                                // In binary operations
+                                if(BinaryOperator::classof(&inst))
+                                {
+                                        BinaryOperator *bop((BinaryOperator*)&inst);
+                                        Value *val1(bop->getOperand(0));	// Get the first and the second operand (as values)
+                                        Value *val2(bop->getOperand(1));
+                                        IntegerType *itype = dyn_cast<IntegerType>(BI->getType());
+
+                                        const APInt ap_int_zero = APInt(itype->getBitWidth(), 0);
+                                        const APInt ap_int_one  = APInt(itype->getBitWidth(), 1);
+
+                                        ConstantInt *ci;
+
+                                        switch (bop->getOpcode()) // Fold depending on what operator is used
+                                        {
+
+                                        case Instruction::Add:  // Addition
+                                                // 0 + x = 0
+                                                if(ConstantInt::classof(val1))
+                                                {
+                                                        ci = dyn_cast<ConstantInt>(val1);
+
+                                                        if(ci->getValue().eq(ap_int_zero))
+                                                        {
+                                                                DBG(outs()<<"AlgebraicIdentities :: 0 + x = 0 :: Val 1 : " << *val1 << " Val 2 : "<< ci->getValue() << "\n");
+
+                                                                BI = replaceAllUsesWithValAndDelete(B, BI, val2);
+                                                                inst_removed = true;
+                                                                LocalOptsInfo.numAlgebraicOpts++;
+                                                        }
+
+                                                }
+                                                // x + 0 = 0
+                                                else if(ConstantInt::classof(val2))
+                                                {
+                                                        ci = dyn_cast<ConstantInt>(val2);
+
+                                                        if(ci->getValue().eq(ap_int_zero))
+                                                        {
+                                                                DBG(outs()<<"AlgebraicIdentities :: x + 0 = x :: Val 1 : " << ci->getValue() << " Val 2 : "<< *val2 << "\n");
+
+                                                                BI = replaceAllUsesWithValAndDelete(B, BI, val1);
+                                                                inst_removed = true;
+                                                                LocalOptsInfo.numAlgebraicOpts++;
+                                                        }
+                                                }
+
+                                                break;
+
+                                        default:
+                                                break;
+                                        }
+                                }
+
+                                // Increment the iterator only if the current instruction was not removed.
+                                if(!inst_removed)
+                                        BI++;
+
+                        }
+
                 }
 
                 // Constant Folding
@@ -69,7 +164,7 @@ namespace
                         {
                                 Instruction& inst(*BI);
                                 bool known_inst = true;
-                                bool inst_removed = false;	// Is this instruction removed due to constant folding?
+                                bool inst_removed = false;	// Is this instruction removed
 
                                 // In binary operations
                                 if(BinaryOperator::classof(&inst))
@@ -78,7 +173,11 @@ namespace
                                         Value *val1(bop->getOperand(0));	// Get the first and the second operand (as values)
                                         Value *val2(bop->getOperand(1));
 
-                                        if(!ConstantInt::classof(val1) || !ConstantInt::classof(val2)) {++BI; continue;} // The values are not const integers, then there's nothing to do!
+                                        if(!ConstantInt::classof(val1) || !ConstantInt::classof(val2)) {
+                                                // The values are not const integers, then there's nothing to do!
+                                                ++BI;
+                                                continue;
+                                        }
 
                                         ConstantInt *ci1 = dyn_cast<ConstantInt>(val1);	// Get constants from values
                                         ConstantInt *ci2 = dyn_cast<ConstantInt>(val2);
@@ -232,6 +331,8 @@ namespace
                                         DBG(outs() << "ORIGINAL CODE:\n\n");
                                         DBG(B.dump());
 
+                                        // TODO : Figure out order and # of different passes
+
                                         // In the debug mode, print every optimization performed to stdout
                                         DBG(outs() << "\nOPTIMIZATIONS PERFORMED:\n\n");
                                         algebraic_optimizations(B);
@@ -250,7 +351,7 @@ namespace
                 }
         };
 
-        // Register the pass
+// Register the pass
         char LocalOpts::ID = 0;
         RegisterPass<LocalOpts> X("local-opts", "15745: Local Optimizations");
 }

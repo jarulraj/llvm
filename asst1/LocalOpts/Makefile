@@ -5,7 +5,7 @@ CXXFLAGS = $(shell llvm-config --cxxflags) -fcolor-diagnostics -g -O0
 OPT = opt
 
 %.so: %.o
-	$(CXX) -dylib -shared $^ -o $@
+	$(CXX) -shared $^ -o $@
 
 TEST = test-inputs
 inputs : $(TEST)/algebraic.bc $(TEST)/constfold.bc $(TEST)/strength.bc
