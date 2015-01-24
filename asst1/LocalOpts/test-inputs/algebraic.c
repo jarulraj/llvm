@@ -7,11 +7,18 @@ int compute (int a, int b)
 
   result += 0;
   result = 0 + result;
-  
+  result -= 0;
+
+  result *= 0;
+  result *= 1;
+
   result *= (b/b);
   result += (b-b);
   result /= result;
   result -= result;
+  //result = result && 0;
+  
   return result;
 }
+
 

@@ -77,41 +77,231 @@ namespace
                                         const APInt ap_int_one  = APInt(itype->getBitWidth(), 1);
 
                                         ConstantInt *ci;
+                                        ConstantInt *ci_zero = ConstantInt::get(val1->getContext(), ap_int_zero);
+                                        ConstantInt *ci_one  = ConstantInt::get(val1->getContext(), ap_int_one);
 
                                         switch (bop->getOpcode()) // Fold depending on what operator is used
                                         {
 
                                         case Instruction::Add:  // Addition
-                                                // 0 + x = 0
+                                                // 0 + x = x
                                                 if(ConstantInt::classof(val1))
                                                 {
                                                         ci = dyn_cast<ConstantInt>(val1);
-
                                                         if(ci->getValue().eq(ap_int_zero))
                                                         {
-                                                                DBG(outs()<<"AlgebraicIdentities :: 0 + x = 0 :: Val 1 : " << *val1 << " Val 2 : "<< ci->getValue() << "\n");
-																ReplaceInstWithValue(B.getInstList(),BI,val2);
+                                                                DBG(outs()<<"AlgebraicIdentities :: 0 + x = x \n");
+                                                                ReplaceInstWithValue(B.getInstList(), BI, val2);
                                                                 inst_removed = true;
                                                                 LocalOptsInfo.numAlgebraicOpts++;
                                                         }
 
                                                 }
-                                                // x + 0 = 0
+                                                // x + 0 = x
                                                 else if(ConstantInt::classof(val2))
                                                 {
                                                         ci = dyn_cast<ConstantInt>(val2);
-
                                                         if(ci->getValue().eq(ap_int_zero))
                                                         {
-                                                                DBG(outs()<<"AlgebraicIdentities :: x + 0 = x :: Val 1 : " << ci->getValue() << " Val 2 : "<< *val2 << "\n");
-
-																ReplaceInstWithValue(B.getInstList(),BI,val1);
+                                                                DBG(outs()<<"AlgebraicIdentities :: x + 0 = x \n");
+                                                                ReplaceInstWithValue(B.getInstList(), BI, val1);
                                                                 inst_removed = true;
                                                                 LocalOptsInfo.numAlgebraicOpts++;
                                                         }
                                                 }
 
                                                 break;
+
+                                        case Instruction::Sub:  // Subtraction
+                                                // x - 0 = x
+                                                if(ConstantInt::classof(val2))
+                                                {
+                                                        ci = dyn_cast<ConstantInt>(val2);
+                                                        if(ci->getValue().eq(ap_int_zero))
+                                                        {
+                                                                DBG(outs()<<"AlgebraicIdentities :: x - 0 = x \n");
+                                                                ReplaceInstWithValue(B.getInstList(), BI, val1);
+                                                                inst_removed = true;
+                                                                LocalOptsInfo.numAlgebraicOpts++;
+                                                        }
+
+                                                }
+                                                //  x - x = 0
+                                                else if(val1 == val2)
+                                                {
+                                                        DBG(outs()<<"AlgebraicIdentities :: x - x = 0 \n");
+                                                        ReplaceInstWithValue(B.getInstList(), BI, ci_zero);
+                                                        inst_removed = true;
+                                                        LocalOptsInfo.numAlgebraicOpts++;
+                                                }
+
+                                                break;
+
+                                        case Instruction::Mul:  // Multiplication
+                                                // x * 1 = x, x * 0 = 0
+                                                if(ConstantInt::classof(val2))
+                                                {
+                                                        ci = dyn_cast<ConstantInt>(val2);
+                                                        if(ci->getValue().eq(ap_int_one))
+                                                        {
+                                                                DBG(outs()<<"AlgebraicIdentities :: x * 1 = x \n");
+                                                                ReplaceInstWithValue(B.getInstList(), BI, val1);
+                                                                inst_removed = true;
+                                                                LocalOptsInfo.numAlgebraicOpts++;
+                                                        }
+                                                        else if(ci->getValue().eq(ap_int_zero))
+                                                        {
+                                                                DBG(outs()<<"AlgebraicIdentities :: x * 0 = 0 \n");
+                                                                ReplaceInstWithValue(B.getInstList(), BI, ci_zero);
+                                                                inst_removed = true;
+                                                                LocalOptsInfo.numAlgebraicOpts++;
+                                                        }
+                                                }
+                                                // 1 * x = x, 0 * x = 0
+                                                else if(ConstantInt::classof(val1))
+                                                {
+                                                        ci = dyn_cast<ConstantInt>(val1);
+                                                        if(ci->getValue().eq(ap_int_one))
+                                                        {
+                                                                DBG(outs()<<"AlgebraicIdentities :: 1 * x = x \n");
+                                                                ReplaceInstWithValue(B.getInstList(), BI, val2);
+                                                                inst_removed = true;
+                                                                LocalOptsInfo.numAlgebraicOpts++;
+                                                        }
+                                                        else if(ci->getValue().eq(ap_int_zero))
+                                                        {
+                                                                DBG(outs()<<"AlgebraicIdentities :: 0 * x = 0 \n");
+                                                                ReplaceInstWithValue(B.getInstList(), BI, ci_zero);
+                                                                inst_removed = true;
+                                                                LocalOptsInfo.numAlgebraicOpts++;
+                                                        }
+
+                                                }
+
+                                                break;
+
+                                        case Instruction::UDiv:  // Division
+                                        case Instruction::SDiv:
+                                                // x / 1 = x
+                                                if(ConstantInt::classof(val2))
+                                                {
+                                                        ci = dyn_cast<ConstantInt>(val2);
+                                                        if(ci->getValue().eq(ap_int_one))
+                                                        {
+                                                                DBG(outs()<<"AlgebraicIdentities :: x / 1 = x \n");
+                                                                ReplaceInstWithValue(B.getInstList(), BI, val1);
+                                                                inst_removed = true;
+                                                                LocalOptsInfo.numAlgebraicOpts++;
+                                                        }
+
+                                                }
+                                                //  0 / x = 0
+                                                else if(ConstantInt::classof(val1))
+                                                {
+                                                        ci = dyn_cast<ConstantInt>(val1);
+                                                        if(ci->getValue().eq(ap_int_zero))
+                                                        {
+                                                                DBG(outs()<<"AlgebraicIdentities :: 0 / x = 0 \n");
+                                                                ReplaceInstWithValue(B.getInstList(), BI, ci_zero);
+                                                                inst_removed = true;
+                                                                LocalOptsInfo.numAlgebraicOpts++;
+                                                        }
+                                                }
+                                                //  x / x = 1
+                                                else if(val1 == val2)
+                                                {
+                                                        DBG(outs()<<"AlgebraicIdentities :: x / x = 1 \n");
+                                                        ReplaceInstWithValue(B.getInstList(), BI, ci_one);
+                                                        inst_removed = true;
+                                                        LocalOptsInfo.numAlgebraicOpts++;
+                                                }
+
+                                                break;
+
+                                        case Instruction::And:  // And
+                                                // x && 0 = 0
+                                                if(ConstantInt::classof(val2))
+                                                {
+                                                        ci = dyn_cast<ConstantInt>(val2);
+                                                        if(ci->getValue().eq(ap_int_zero))
+                                                        {
+                                                                DBG(outs()<<"AlgebraicIdentities :: x && 0 = 0 \n");
+                                                                ReplaceInstWithValue(B.getInstList(), BI, ci_zero);
+                                                                inst_removed = true;
+                                                                LocalOptsInfo.numAlgebraicOpts++;
+                                                        }
+                                                }
+                                                // 0 && x = 0
+                                                else if(ConstantInt::classof(val1))
+                                                {
+                                                        ci = dyn_cast<ConstantInt>(val1);
+                                                        if(ci->getValue().eq(ap_int_zero))
+                                                        {
+                                                                DBG(outs()<<"AlgebraicIdentities :: 0 && x = 0 \n");
+                                                                ReplaceInstWithValue(B.getInstList(), BI, ci_zero);
+                                                                inst_removed = true;
+                                                                LocalOptsInfo.numAlgebraicOpts++;
+                                                        }
+                                                }
+
+                                                break;
+
+                                        case Instruction::Or:  // Or
+                                                // x || 0 = x
+                                                if(ConstantInt::classof(val2))
+                                                {
+                                                        ci = dyn_cast<ConstantInt>(val2);
+                                                        if(ci->getValue().eq(ap_int_zero))
+                                                        {
+                                                                DBG(outs()<<"AlgebraicIdentities :: x || 0 = x \n");
+                                                                ReplaceInstWithValue(B.getInstList(), BI, val1);
+                                                                inst_removed = true;
+                                                                LocalOptsInfo.numAlgebraicOpts++;
+                                                        }
+                                                }
+                                                // 0 || x = x
+                                                else if(ConstantInt::classof(val1))
+                                                {
+                                                        ci = dyn_cast<ConstantInt>(val1);
+                                                        if(ci->getValue().eq(ap_int_zero))
+                                                        {
+                                                                DBG(outs()<<"AlgebraicIdentities :: 0 || x = x \n");
+                                                                ReplaceInstWithValue(B.getInstList(), BI, val2);
+                                                                inst_removed = true;
+                                                                LocalOptsInfo.numAlgebraicOpts++;
+                                                        }
+                                                }
+                                                break;
+
+                                        case Instruction::Xor:  // Xor
+                                                // x ^ 0 = x
+                                                if(ConstantInt::classof(val2))
+                                                {
+                                                        ci = dyn_cast<ConstantInt>(val2);
+                                                        if(ci->getValue().eq(ap_int_zero))
+                                                        {
+                                                                DBG(outs()<<"AlgebraicIdentities :: x ^ 0 = x \n");
+                                                                ReplaceInstWithValue(B.getInstList(), BI, val1);
+                                                                inst_removed = true;
+                                                                LocalOptsInfo.numAlgebraicOpts++;
+                                                        }
+                                                }
+                                                // 0 ^ x = x
+                                                else if(ConstantInt::classof(val1))
+                                                {
+                                                        ci = dyn_cast<ConstantInt>(val1);
+                                                        if(ci->getValue().eq(ap_int_zero))
+                                                        {
+                                                                DBG(outs()<<"AlgebraicIdentities :: 0 ^ x = x \n");
+                                                                ReplaceInstWithValue(B.getInstList(), BI, val2);
+                                                                inst_removed = true;
+                                                                LocalOptsInfo.numAlgebraicOpts++;
+                                                        }
+                                                }
+
+                                                break;
+
+
 
                                         default:
                                                 break;
@@ -164,7 +354,8 @@ namespace
                                         case Instruction::Mul: // Multiplication
                                                 ci_final = get_const(ci1->getType(), (ci1->getSExtValue()) * (ci2->getSExtValue()));
                                                 break;
-                                        case Instruction::SDiv: // Division
+                                        case Instruction::UDiv: // Division
+                                        case Instruction::SDiv:
                                                 ci_final = get_const(ci1->getType(), (ci1->getSExtValue()) / (ci2->getSExtValue()));
                                                 break;
                                         case Instruction::Shl:  // Left Shift
@@ -208,7 +399,7 @@ namespace
                                 bool inst_removed = false;	// Is this instruction removed due to strength reduction
 
                                 // In binary operations
-                                if(BinaryOperator *bop = dyn_cast<BinaryOperator>(&inst)) 
+                                if(BinaryOperator *bop = dyn_cast<BinaryOperator>(&inst))
                                 {
                                         Value *val1(bop->getOperand(0));	// Get the first and the second operand (as values)
                                         Value *val2(bop->getOperand(1));
@@ -235,6 +426,7 @@ namespace
                                                 }
                                                 break;
 
+                                        case Instruction::UDiv: // Division
                                         case Instruction::SDiv:
                                                 // x / 2^k ==> (x >> k)
                                                 if (ConstantInt::classof(val2)) {	// If val2 is a constant
