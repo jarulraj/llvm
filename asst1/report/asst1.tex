@@ -1,0 +1,50 @@
+\documentclass{article}
+
+\usepackage{hw}
+\usepackage{bm}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{multicol}
+\usepackage{paralist}
+\usepackage{todonotes}
+\setlength{\marginparwidth}{2.15cm}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage{cleveref}
+\usepackage{amsmath}
+
+%\DeclareMathOperator*{\argmin}{arg\,min}
+%\DeclareMathOperator*{\argmax}{arg\,max}
+
+\def \issoln {1}
+
+% Some commands to allow solutions to be embedded in the assignment file.
+\ifcsname issoln\endcsname \else \def\issoln{0} \fi
+\newcommand{\soln}[1]
+{
+  \if\issoln 1
+  \textbf{Solution:}
+  #1
+  \fi
+}
+
+\begin{document}
+
+\section*{}
+\begin{center}
+  \centerline{\textsc{\LARGE Homework Assignment 1{\if\issoln 1 Solutions \else \fi}}}
+  \vspace{1em}
+  \textsc{\large CMU 15-745: Optimizing Compilers (Spring 2015)} \\
+  \vspace{3em}
+  \centerline{\large{Joy Arulraj (jarulraj), Nisarg Shah (nkshah)}}
+  \vspace{1em}
+\end{center}
+
+\input{problem1}
+
+\end{document}
