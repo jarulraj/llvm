@@ -58,8 +58,10 @@ namespace
         {
 
                 // Algebraic Optimizations
-                void algebraic_optimizations(BasicBlock& B)
+                bool algebraic_optimizations(BasicBlock& B)
                 {
+                        bool modified = false;
+
                         // Iterate over all instructions
                         for(BasicBlock::iterator BI = B.begin(); BI != B.end(); )
                         {
@@ -312,13 +314,19 @@ namespace
                                 if(!inst_removed)
                                         BI++;
 
+                                // Modified block
+                                if(inst_removed)
+                                        modified = true;
                         }
 
+                        return modified;
                 }
 
                 // Constant Folding
-                void constant_folding(BasicBlock& B)
+                bool constant_folding(BasicBlock& B)
                 {
+                        bool modified = false;
+
                         // Iterate over all instructions
                         for(BasicBlock::iterator BI = B.begin(); BI != B.end(); )
                         {
@@ -356,7 +364,10 @@ namespace
                                                 break;
                                         case Instruction::UDiv: // Division
                                         case Instruction::SDiv:
-                                                ci_final = get_const(ci1->getType(), (ci1->getSExtValue()) / (ci2->getSExtValue()));
+                                                if(ci2->getSExtValue() != 0)
+                                                        ci_final = get_const(ci1->getType(), (ci1->getSExtValue()) / (ci2->getSExtValue()));
+                                                else
+                                                        known_inst = false; // Divide by zero
                                                 break;
                                         case Instruction::Shl:  // Left Shift
                                                 ci_final = get_const(ci1->getType(), (ci1->getSExtValue()) << (ci2->getSExtValue()));
@@ -387,12 +398,21 @@ namespace
                                 // This is chosen instead of doing --BI when we remove the instruction because --BI crashes when BI is at B.begin()
                                 if (!inst_removed)
                                         ++BI;
+
+                                // Modified block
+                                if(inst_removed)
+                                        modified = true;
+
                         }
+
+                        return modified;
                 }
 
                 // Strength Reduction
-                void strength_reduction(BasicBlock& B)
+                bool strength_reduction(BasicBlock& B)
                 {
+                        bool modified = false;
+
                         // Iterate over all instructions
                         for(BasicBlock::iterator BI = B.begin(), BE = B.end(); BI != BE; ) {
                                 Instruction& inst(*BI);
@@ -448,9 +468,15 @@ namespace
                                 }
 
                                 // Increment the iterator only if the current instruction was not removed.
-                                // This is chosen instead of doing --BI when we remove the instruction because --BI crashes when BI is at B.begin()
-                                if (!inst_removed) ++BI;
+                                if (!inst_removed)
+                                        ++BI;
+
+                                // Modified block
+                                if(inst_removed)
+                                        modified = true;
                         }
+
+                        return modified;
                 }
 
                 // Printing summary statistics
@@ -492,13 +518,41 @@ namespace
                                         DBG(outs() << "ORIGINAL CODE:\n\n");
                                         DBG(B.dump());
 
-                                        // TODO : Figure out order and # of different passes
-
                                         // In the debug mode, print every optimization performed to stdout
                                         DBG(outs() << "\nOPTIMIZATIONS PERFORMED:\n\n");
-                                        algebraic_optimizations(B);
-                                        //constant_folding(B);
-                                        //strength_reduction(B);
+
+                                        // Loop till block is modified
+                                        while(1)
+                                        {
+                                                bool modified = false;
+
+                                                // Algebraic optimization pass
+                                                modified = modified || algebraic_optimizations(B);
+                                                if(modified)
+                                                {
+                                                        DBG(B.dump());
+                                                        DBG(outs() << "-------------------------------\n");
+                                                }
+
+                                                // Constant folding pass
+                                                modified = modified || constant_folding(B);
+                                                if(modified)
+                                                {
+                                                        DBG(B.dump());
+                                                        DBG(outs() << "-------------------------------\n");
+                                                }
+
+                                                // Strength reduction pass
+                                                modified = modified || strength_reduction(B);
+                                                if(modified)
+                                                {
+                                                        DBG(B.dump());
+                                                        DBG(outs() << "-------------------------------\n");
+                                                }
+
+                                                if(!modified)
+                                                        break;
+                                        };
 
                                         // In the debug mode, print the final code to stdout
                                         DBG(outs() << "\nFINAL CODE:\n\n");

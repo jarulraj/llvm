@@ -8,7 +8,7 @@ OPT = opt
 	$(CXX) -shared $^ -o $@
 
 TEST = test-inputs
-inputs : $(TEST)/algebraic.bc $(TEST)/constfold.bc $(TEST)/strength.bc
+inputs : $(TEST)/algebraic.bc $(TEST)/constfold.bc $(TEST)/strength.bc $(TEST)/merge.bc
  
 %.tmp: %.c
 	$(CXX) -O0 -emit-llvm -c $^ -o $@ 
