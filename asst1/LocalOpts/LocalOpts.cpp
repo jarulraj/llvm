@@ -41,8 +41,7 @@ namespace
         {
                 if (n <= 0)
                         return -1;
-
-                int64_t res = 0;
+		int64_t res = 0;
                 while (((n & 1) == 0) && n > 1) { // While n is even and more than 1
                         n >>= 1;
                         ++res;
@@ -52,6 +51,27 @@ namespace
                         return res;
                 else
                         return -1;
+        }
+
+        // If n is (a power of 2) +- 1, then set that power in the exponent argument and return n-that_power_of_2. 
+        // Else, return -2.
+        int64_t find_log_improved (int64_t n, int64_t &exponent)
+        {
+                if (n <= 0)
+                        return -1;
+		int64_t res = -2;
+		if ((exponent = find_log(n)) >= 0) {
+			return 0;
+		}
+		else if ((exponent = find_log(n-1)) >= 0) {
+			return 1;
+		}
+		else if ((exponent = find_log(n+1)) >= 0) {
+			return -1;
+		}
+		else {
+			return -2;
+		}
         }
 
         class LocalOpts : public ModulePass
@@ -426,7 +446,7 @@ namespace
 
                                         switch (bop->getOpcode()) {	// Switch on the operator
 
-                                        case Instruction::Mul:  //TODO: Figure out how to replace x*3 or 3*x by x<<1 + x
+                                        case Instruction::Mul:
                                                 // x * 2^k, 2^k * x ==> (x << k)
                                                 if (ConstantInt::classof(val1)) {		// Make sure the constant value, if any, is val2
                                                         Value *t(val1);
@@ -436,12 +456,27 @@ namespace
 
                                                 if (ConstantInt::classof(val2)) {	// Now if it is really a constant
                                                         ConstantInt *ci2 = dyn_cast<ConstantInt>(val2);
-                                                        int64_t log_i = find_log(ci2->getSExtValue());
-                                                        if (log_i >= 0) {	// We return -1 if the constant is not a power of 2
-                                                                BinaryOperator *modified_inst(BinaryOperator::Create(Instruction::Shl, val1, get_const(ci2->getType(), log_i)));
-                                                                DBG(outs() << "Replacing: " << val1->getName() << " * " << ci2->getSExtValue() << " with " << val1->getName() << " << " << log_i << "\n");
-                                                                ReplaceInstWithInst(B.getInstList(),BI,modified_inst);
-                                                                LocalOptsInfo.numStrengthReds++;
+                                                        int64_t log_i = 0;
+                                                        int64_t check_pow = find_log_improved(ci2->getSExtValue(),log_i);
+                                                        if (check_pow != -2) {	// if val2 is 2^k +/- 1
+	                                                        BinaryOperator *modified_inst(BinaryOperator::Create(Instruction::Shl, val1, get_const(ci2->getType(), log_i)));
+                                                        	if (check_pow == 0) { // val2 is 2^k --> only need one instruction
+		                                                        DBG(outs() << "Replacing: " << val1->getName() << " * " << ci2->getSExtValue() << " with " << val1->getName() << " << " << log_i << "\n");
+		                                                        ReplaceInstWithInst(B.getInstList(),BI,modified_inst);
+		                                                }
+		                                                else if (check_pow == 1) {	// 2^k + 1
+		                                                        DBG(outs() << "Replacing: " << val1->getName() << " * " << ci2->getSExtValue() << " with " << val1->getName() << " << " << log_i << " + " << val1->getName() << "\n");
+		                                                	B.getInstList().insert(BI,modified_inst);
+		                                                	BinaryOperator *final_inst(BinaryOperator::Create(Instruction::Add, modified_inst, val1));
+		                                                	ReplaceInstWithInst(B.getInstList(),BI,final_inst);
+		                                                }
+		                                                else { // 2^k - 1
+		                                                        DBG(outs() << "Replacing: " << val1->getName() << " * " << ci2->getSExtValue() << " with " << val1->getName() << " << " << log_i << " - " << val1->getName() << "\n");
+		                                                	B.getInstList().insert(BI,modified_inst);
+		                                                	BinaryOperator *final_inst(BinaryOperator::Create(Instruction::Sub, modified_inst, val1));
+		                                                	ReplaceInstWithInst(B.getInstList(),BI,final_inst);
+		                                                }
+	                                                        LocalOptsInfo.numStrengthReds++;
                                                         }
                                                 }
                                                 break;
@@ -499,7 +534,7 @@ namespace
                 {
                 }
 
-                // We don't modify the program, so we preserve all analyses
+                // We only do local optimizations, so we don't modify the CFG. 
                 virtual void getAnalysisUsage(AnalysisUsage &AU) const
                 {
                         AU.setPreservesCFG();
