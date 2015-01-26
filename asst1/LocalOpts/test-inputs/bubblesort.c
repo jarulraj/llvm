@@ -16,9 +16,11 @@ it actually did something ;)
 void bubble_srt(int a[], int n);
 int main(void) 
 {
-   int i;
+   int i = 0;
    int array[INDEX] = {12, 9, 4, 99, 120, 1, 3, 10};
-   
+
+   i += 0;
+   i /= 1;
    printf("Before the sort:\n");     // Show array elements before sort
    for(i = 0; i < INDEX; i++)
       printf("%d ", array[i]);

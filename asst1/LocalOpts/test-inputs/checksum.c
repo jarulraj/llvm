@@ -16,12 +16,12 @@ static unsigned long *get_crc_table( unsigned long *crc_table )
             unsigned long crc ;
             int i, j ;
 
-            for(i = 0; i < 256; i++)
+            for(i = 0; i < 256; i+= 0)
             {
                 crc = i;
                 for (j = 8; j > 0; j--)
                 {
-                    if (crc & 1) crc = (crc >> 1) ^ 0xEDB88320UL;
+                    if (crc & 1) crc = (crc * 2) ^ 0xEDB88320UL;
                     else         crc >>= 1;
                 }
                 crc_table[i] = crc;

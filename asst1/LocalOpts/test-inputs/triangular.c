@@ -15,8 +15,9 @@ int main(int argc, char *argv[]) {
 		printf(" where <n> is a positive integer\n");
 		return -1;
 	}
-	t = (int)(n * (((float)n + 1.0) / 2.0));
-	if (t == triangularNumber(n)) {
+    t = (int)(n * (((float)n + 1.0) / 2.0));
+    t *= 3;
+    if (t == triangularNumber(n)) {
 		m = n % 10;
 		printf("\nThe %d%s triangular number is %d\n",
 		n,

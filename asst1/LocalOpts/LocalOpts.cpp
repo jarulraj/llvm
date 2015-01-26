@@ -41,7 +41,7 @@ namespace
         {
                 if (n <= 0)
                         return -1;
-		int64_t res = 0;
+                int64_t res = 0;
                 while (((n & 1) == 0) && n > 1) { // While n is even and more than 1
                         n >>= 1;
                         ++res;
@@ -53,25 +53,25 @@ namespace
                         return -1;
         }
 
-        // If n is (a power of 2) +- 1, then set that power in the exponent argument and return n-that_power_of_2. 
+        // If n is (a power of 2) +- 1, then set that power in the exponent argument and return n-that_power_of_2.
         // Else, return -2.
         int64_t find_log_improved (int64_t n, int64_t &exponent)
         {
                 if (n <= 0)
                         return -1;
-		int64_t res = -2;
-		if ((exponent = find_log(n)) >= 0) {
-			return 0;
-		}
-		else if ((exponent = find_log(n-1)) >= 0) {
-			return 1;
-		}
-		else if ((exponent = find_log(n+1)) >= 0) {
-			return -1;
-		}
-		else {
-			return -2;
-		}
+                int64_t res = -2;
+                if ((exponent = find_log(n)) >= 0) {
+                        return 0;
+                }
+                else if ((exponent = find_log(n-1)) >= 0) {
+                        return 1;
+                }
+                else if ((exponent = find_log(n+1)) >= 0) {
+                        return -1;
+                }
+                else {
+                        return -2;
+                }
         }
 
         class LocalOpts : public ModulePass
@@ -94,6 +94,13 @@ namespace
                                         Value *val1(bop->getOperand(0));	// Get the first and the second operand (as values)
                                         Value *val2(bop->getOperand(1));
                                         IntegerType *itype = dyn_cast<IntegerType>(BI->getType());
+
+                                        // Skip non-Integer types
+                                        if(itype == NULL)
+                                        {
+                                                BI++;
+                                                continue;
+                                        }
 
                                         const APInt ap_int_zero = APInt(itype->getBitWidth(), 0);
                                         const APInt ap_int_one  = APInt(itype->getBitWidth(), 1);
@@ -459,24 +466,24 @@ namespace
                                                         int64_t log_i = 0;
                                                         int64_t check_pow = find_log_improved(ci2->getSExtValue(),log_i);
                                                         if (check_pow != -2) {	// if val2 is 2^k +/- 1
-	                                                        BinaryOperator *modified_inst(BinaryOperator::Create(Instruction::Shl, val1, get_const(ci2->getType(), log_i)));
-                                                        	if (check_pow == 0) { // val2 is 2^k --> only need one instruction
-		                                                        DBG(outs() << "Replacing: " << val1->getName() << " * " << ci2->getSExtValue() << " with " << val1->getName() << " << " << log_i << "\n");
-		                                                        ReplaceInstWithInst(B.getInstList(),BI,modified_inst);
-		                                                }
-		                                                else if (check_pow == 1) {	// 2^k + 1
-		                                                        DBG(outs() << "Replacing: " << val1->getName() << " * " << ci2->getSExtValue() << " with " << val1->getName() << " << " << log_i << " + " << val1->getName() << "\n");
-		                                                	B.getInstList().insert(BI,modified_inst);
-		                                                	BinaryOperator *final_inst(BinaryOperator::Create(Instruction::Add, modified_inst, val1));
-		                                                	ReplaceInstWithInst(B.getInstList(),BI,final_inst);
-		                                                }
-		                                                else { // 2^k - 1
-		                                                        DBG(outs() << "Replacing: " << val1->getName() << " * " << ci2->getSExtValue() << " with " << val1->getName() << " << " << log_i << " - " << val1->getName() << "\n");
-		                                                	B.getInstList().insert(BI,modified_inst);
-		                                                	BinaryOperator *final_inst(BinaryOperator::Create(Instruction::Sub, modified_inst, val1));
-		                                                	ReplaceInstWithInst(B.getInstList(),BI,final_inst);
-		                                                }
-	                                                        LocalOptsInfo.numStrengthReds++;
+                                                                BinaryOperator *modified_inst(BinaryOperator::Create(Instruction::Shl, val1, get_const(ci2->getType(), log_i)));
+                                                                if (check_pow == 0) { // val2 is 2^k --> only need one instruction
+                                                                        DBG(outs() << "Replacing: " << val1->getName() << " * " << ci2->getSExtValue() << " with " << val1->getName() << " << " << log_i << "\n");
+                                                                        ReplaceInstWithInst(B.getInstList(),BI,modified_inst);
+                                                                }
+                                                                else if (check_pow == 1) {	// 2^k + 1
+                                                                        DBG(outs() << "Replacing: " << val1->getName() << " * " << ci2->getSExtValue() << " with " << val1->getName() << " << " << log_i << " + " << val1->getName() << "\n");
+                                                                        B.getInstList().insert(BI,modified_inst);
+                                                                        BinaryOperator *final_inst(BinaryOperator::Create(Instruction::Add, modified_inst, val1));
+                                                                        ReplaceInstWithInst(B.getInstList(),BI,final_inst);
+                                                                }
+                                                                else { // 2^k - 1
+                                                                        DBG(outs() << "Replacing: " << val1->getName() << " * " << ci2->getSExtValue() << " with " << val1->getName() << " << " << log_i << " - " << val1->getName() << "\n");
+                                                                        B.getInstList().insert(BI,modified_inst);
+                                                                        BinaryOperator *final_inst(BinaryOperator::Create(Instruction::Sub, modified_inst, val1));
+                                                                        ReplaceInstWithInst(B.getInstList(),BI,final_inst);
+                                                                }
+                                                                LocalOptsInfo.numStrengthReds++;
                                                         }
                                                 }
                                                 break;
@@ -534,7 +541,7 @@ namespace
                 {
                 }
 
-                // We only do local optimizations, so we don't modify the CFG. 
+                // We only do local optimizations, so we don't modify the CFG.
                 virtual void getAnalysisUsage(AnalysisUsage &AU) const
                 {
                         AU.setPreservesCFG();
