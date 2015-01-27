@@ -1,6 +1,34 @@
 \section*{Problem 1: CFG Basics}
 
-\begin{enumerate}
-\item {A}
-\item {B}
-\end{enumerate}
+The maximal basic blocks are outlined below. 
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{| l | l l |}
+\hline
+B1 & & \shortstack[l]{x = 50 \\ y = 8 \\ if (x > y) goto L2} \\
+\hline
+B2 & & \shortstack[l]{x = 50 \\ goto L3} \\
+\hline
+B3 & L1: & \shortstack[l]{x = 27 \\ return x}\\
+\hline
+B4 & L2: & \shortstack[l]{y = x + 1 \\ if (y < x) goto L2}\\
+\hline
+B5 &  & x = 24\\
+\hline
+B6 & L3: & \shortstack[l]{z = x + y \\ switch (z) \{ 26 => L1 | 32 => L4 | default => L5 \} } \\
+\hline
+B7 & L4: & print(``success'') \\
+\hline
+B8 & L5: & \shortstack[l]{x = 50\\return x}\\
+\hline
+\end{tabular}
+\end{table}
+
+The CFG is given below.
+
+%\begin{figure}
+%\centering
+%\includegraphics[scale=0.5]{images/cfg.jpg}
+%\caption{CFG}
+%\end{figure}
