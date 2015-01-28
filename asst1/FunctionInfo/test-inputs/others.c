@@ -1,24 +1,11 @@
-int g;
-int g_incr (int c)
-{
-    g += c;
-    return g;
-}
-int loop (int a, int b, int c)
-{
-    int i;
-    int ret = 0;
-    for (i = a; i < b; i++) {
-        g_incr (c);
-    }
-    return ret + g;
-}
+int loop (int a, int b, int c);
 
-// Only 1 block
+// TEST 1 : Only 1 block
 void z()
 {
 }
 
+// TEST 2 : Recursion
 int y(int a)
 {
     int s = loop(1, 100, 3);
@@ -30,8 +17,8 @@ int y(int a)
 }
 
 
-// Var Arg
-#include <stdarg.h>     /* va_list, va_start, va_arg, va_end */
+// TEST 3 : Var Arg
+#include <stdarg.h>     
 
 int FindMax (int n, ...)
 {

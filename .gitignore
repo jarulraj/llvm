@@ -13,3 +13,11 @@ GTAGS
 GRTAGS
 GPATH
 GSYMS
+
+# Latex
+*.pdf
+*.ps
+*.out
+*.log
+*.aux
+*.d

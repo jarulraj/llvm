@@ -54,6 +54,7 @@ namespace {
                         if (!is_var_arg) {
                                 arg_count = F.arg_size(); // # fixed args
                         }
+
                         callsite_count = F.getNumUses(); // # direct call sites
                         block_count = F.size(); // # basic blocks
 

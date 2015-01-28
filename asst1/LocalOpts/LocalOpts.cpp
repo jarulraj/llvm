@@ -18,7 +18,7 @@ using namespace llvm;
 
 
 // DEBUG mode: Prints all the optimizations performed to stdout, and the original and final code so we can compare!
-#define DEBUG 1
+//#define DEBUG 1
 
 #ifdef DEBUG
 #define DBG(a) a
