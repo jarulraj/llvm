@@ -1,0 +1,7 @@
++ Source code is available in the respective folders.
+After running "make", the passes can be applied on any test input.
+
++ The test files are in "test-inputs" sub-directories within "FunctionInfo" 
+and "LocalOpts" directories.
+
++ A copy of the report is present in this directory.
