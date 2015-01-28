@@ -3,7 +3,7 @@
 \subsection{Implementation}
 
 We iterate over all functions in the module and for each function, we use helper functions in the
-LLVM \texttt{Function} class such as \texttt{getName()} to obtain the required info.
+LLVM \texttt{Function} class, such as \texttt{getName()}, to obtain the required info.
 We use the \texttt{size()} function in the \texttt{Instruction} class to compute the number of
 instructions in all the basic blocks in the function.
 
@@ -36,10 +36,40 @@ llvm.va_end,    1,      1,      0,      0
 
 \subsection{Implementation}
 
-We iterate over all functions in the module and for each function, we use helper functions in the
-LLVM \texttt{Function} class such as \texttt{getName()} to obtain the required info.
-We use the \texttt{size()} function in the \texttt{Instruction} class to compute the number of
-instructions in all the basic blocks in the function.
+We wrote a per-basic block pass that performs the required transformations. For each block, we keep
+applying the 3 transformations within a \textbf{loop}, until the block is not modified after an entire iteration.
+This is to ensure that the benefits of each optimization are relayed onto other optimizations and we
+are not constrained by the order in which we apply the optimizations within a single iteration.
+The transformations are described below:
+
+\begin{itemize}
+\item{\textbf{Algebraic Identities :}}
+  We iterate over all instructions and look for binary operations involving scalar integer type operands with
+  one of them being a constant.
+  Depending on the type of operation, we apply identities that involve either the operator's \textbf{identity element} or
+  \textbf{inverse element}. For instance, for the addition operator \texttt{Instruction::Add}, we use the identities
+  $x + 0 = x$ and $0 + x = x$. For the subtraction operator \texttt{Instruction::Sub}, we apply the identities
+  $x - 0 = x$ and $x - x = 0$. We do similar optimizations for other operators like  \texttt{Instruction::Mul},
+  \texttt{Instruction::UDiv}, and  \texttt{Instruction::And}. In all cases, we use \texttt{ReplaceInstWithValue}
+  to perform the optimization.
+  
+\item{\textbf{Constant Folding :}}
+  We iterate over all instructions and look for binary operations involving scalar constant integer type operands.
+  Depending on the type of operation, we evaluate the expression and replace all uses of that instruction with the
+  constant using \texttt{ReplaceInstWithValue}. We do not handle floating point operations exhaustively.
+  All common instructions like \texttt{Instruction::Add}, \texttt{Instruction::Sub}, \texttt{Instruction::Mul}, and
+  \texttt{Instruction::Div} are handled.
+  
+\item{\textbf{Strength Reduction :}}
+  We iterate over all instructions and look for binary operations involving scalar integer type operands with
+  one of them being a constant.
+  Depending on the type of operation, we perform strength reduction. For instance, when the RHS involves a
+  \texttt{Instruction::Mul} with a number that is a power of 2, we replace that instruction with another instruction
+  that uses \texttt{Instruction::Shl}. This is done using \texttt{ReplaceInstWithInst}. We also handle
+  division by a power of 2. We extended the optimization to handle multiplication by numbers of the form $2^{k} + 1$
+  and $2^{k} - 1$. For instance, multiplication with 3 is replaced by left shift and addition operators.  
+  
+\end{itemize}
 
 \subsection{Source Code Listing}
 
