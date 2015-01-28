@@ -1,10 +1,36 @@
-\section{Coding Assignment}
+\section{FunctionInfo}
 
-\subsection{FunctionInfo}
+\subsection{Implementation}
 
-\subsubsection{Listing}
+We iterate over all functions in the module and for each function, we use helper functions in the
+LLVM \texttt{Function} class such as \texttt{getName()} to obtain the required info.
+We use the \texttt{size()} function in the \texttt{Instruction} class to compute the number of
+instructions in all the basic blocks in the function.
+
+\subsection{Source Code Listing}
+
+The listing starts from the next page.
 
 \includepdf[pages=-]{../FunctionInfo/FunctionInfo.pdf}
+
+\subsection{Test Cases}
+
+The test cases start from the next page.
+
+\includepdf[pages=-]{../FunctionInfo/test-inputs/others.pdf}
+
+\textbf{Expected Results}:\\
+
+\begin{verbatim}
+Module test-inputs/others.bc
+Name,   Args,   Calls,  Blocks, Insns
+z,      0,      0,      1,      1
+y,      1,      1,      3,      6
+loop,   3,      1,      0,      0
+FindMax,        *,      0,      8,      29
+llvm.va_start,  1,      1,      0,      0
+llvm.va_end,    1,      1,      0,      0
+\end{verbatim}
 
 %%% Local Variables:
 %%% mode: latex
