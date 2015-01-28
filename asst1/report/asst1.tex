@@ -15,6 +15,7 @@
 \usepackage{enumitem}
 \usepackage{cleveref}
 \usepackage{pdfpages}
+\usepackage{fancyhdr}
 
 %\DeclareMathOperator*{\argmin}{arg\,min}
 %\DeclareMathOperator*{\argmax}{arg\,max}
@@ -31,6 +32,11 @@
   \fi
 }
 
+\newcommand{\email}[1]{\href{mailto:#1@cs.cmu.edu}{#1}}
+
+\pagestyle{fancy}
+\lhead{AID :: \email{jarulraj}, \email{nkshah}}
+
 \begin{document}
 
 \section*{}
@@ -39,7 +45,7 @@
   \vspace{1em}
   \textsc{\large CMU 15-745: Optimizing Compilers (Spring 2015)} \\
   \vspace{3em}
-  \centerline{\large{Joy Arulraj (jarulraj), Nisarg Shah (nkshah)}}
+  \centerline{\large{Joy Arulraj (\email{jarulraj}), Nisarg Shah (\email{nkshah})}}
   \vspace{1em}
 \end{center}
 
