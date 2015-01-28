@@ -32,6 +32,48 @@ llvm.va_start,  1,      1,      0,      0
 llvm.va_end,    1,      1,      0,      0
 \end{verbatim}
 
+\section{LocalOpts}
+
+\subsection{Implementation}
+
+We iterate over all functions in the module and for each function, we use helper functions in the
+LLVM \texttt{Function} class such as \texttt{getName()} to obtain the required info.
+We use the \texttt{size()} function in the \texttt{Instruction} class to compute the number of
+instructions in all the basic blocks in the function.
+
+\subsection{Source Code Listing}
+
+The listing starts from the next page.
+
+\includepdf[pages=-]{../LocalOpts/LocalOpts.pdf}
+
+\subsection{Test Cases}
+
+The test cases start from the next page.
+
+\includepdf[pages=-]{../LocalOpts/test-inputs/merge.pdf}
+
+\textbf{Expected Results}:\\
+
+\begin{verbatim}
+Transformations applied:
+Algebraic identities: 7
+Constant folding: 19
+Strength reduction: 0
+\end{verbatim}
+
+\includepdf[pages=-]{../LocalOpts/test-inputs/others.pdf}
+
+\textbf{Expected Results}:\\
+
+\begin{verbatim}
+Transformations applied:
+Algebraic identities: 0
+Constant folding: 0
+Strength reduction: 6
+\end{verbatim}
+
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "asst1"
