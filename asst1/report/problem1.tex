@@ -1,35 +1,42 @@
 \section{CFG Basics}
 
-The maximal basic blocks are outlined below. 
+\begin{itemize}
+ 
+\item The maximal basic blocks are outlined below. 
 
 
 \begin{table}[!ht]
 \centering
-\begin{tabular}{| l | l l |}
-\hline
+\begin{tabular}{l l l }
+  \toprule
+  \toprule
+Basic Block Label & & Code \\
+\midrule
 B1 & & \shortstack[l]{x = 50 \\ y = 8 \\ if (x $>$ y) goto L2} \\
-\hline
+\midrule
 B2 & & \shortstack[l]{x = 50 \\ goto L3} \\
-\hline
+\midrule
 B3 & L1: & \shortstack[l]{x = 27 \\ return x}\\
-\hline
+\midrule
 B4 & L2: & \shortstack[l]{y = x + 1 \\ if (y $<$ x) goto L2}\\
-\hline
+\midrule
 B5 &  & x = 24\\
-\hline
+\midrule
 B6 & L3: & \shortstack[l]{z = x + y \\ switch (z) \{ 26 $=>$ L1 $\|$ 32 $=>$ L4 $\|$ default $=>$ L5 \} } \\
-\hline
+\midrule
 B7 & L4: & print(``success'') \\
-\hline
+\midrule
 B8 & L5: & \shortstack[l]{x = 50\\return x}\\
-\hline
+\bottomrule
 \end{tabular}
 \end{table}
 
-The CFG is given below.
-
+\item The CFG is given below.
+  
 %\begin{figure}
 %\centering
 %\includegraphics[scale=0.5]{images/cfg.jpg}
 %\caption{CFG}
 %\end{figure}
+
+\end{itemize}
