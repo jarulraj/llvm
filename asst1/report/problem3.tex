@@ -71,7 +71,8 @@ Now, during our data flow analysis, once we compute $OUT(B)$ for a basic block $
 
 \item \textbf{Clearly describe in pseudo-code an algorithm that uses the result of your analysis to identify faint expressions.} \\
 
-  We first compute the set of strongly live variables $SLV(s)$ at each program point $s$ using the analysis describe above. Once we have the result of that analysis,
+  We first compute the set of strongly live variables $SLV(s)$ at each program point $s$ using the analysis described above.
+  Once we have the result of that analysis,
   we use this equation to compute the set of faint variables $FV(s)$ at program point $s$,
 
   $$FV(s) = V \setminus SLV(s)$$
@@ -79,8 +80,8 @@ Now, during our data flow analysis, once we compute $OUT(B)$ for a basic block $
   Here, $V$ is the set of variables in the program. Any expression $expr$ at program point $s$ that is being
   assigned to a faint variable $fv \in FV(s)$ is a \textbf{faint expression}. This can be done thus :\\
   
-  \textbf{for} (each assignment instruction $s$) :\{\\
-  remove $s$ if $LHS(s) \in FV(s)$\\  
+  \textbf{for} (each assignment instruction $p$) :\{\\
+  remove $p$ if $LHS(s) \in FV(s)$, where $s$ is the program point immediately after $p$\\  
   \}\\
 
 \end{enumerate}
