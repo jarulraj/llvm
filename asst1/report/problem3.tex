@@ -51,7 +51,7 @@ OUT(s) & \mbox{if } x \notin OUT(s).
 
 \item \textbf{To what values do you initialize the in or out sets ?} \\
 
-  For all other nodes $B$, $IN(B) = \emptyset$. During the backwards pass, we will populate the $IN$ sets
+  For all other nodes $B$, $IN(B) = OUT(B) = \emptyset$. During the backwards pass, we will populate the $IN$ sets
   using the meet operator.
 
 \item \textbf{Does the order that your analysis visits basic blocks matter? What order would you implement and why ?} \\
