@@ -33,7 +33,7 @@ OUT(s) & \mbox{if } x \notin OUT(s).
 \right.
 \]
 
-Now, during our data flow analysis, once we compute $OUT(B)$ for a basic block $B$, we iterate through the instructions of $B$ in the reverse order, and apply the transfer function given above. When we reach the first instruction of the block, its $IN$ will give us $IN(B)$. It seems that unlike the transfer function of live variable analysis, this transfer function is not composable (i.e., after composing over multiple instructions in the block, its final form is not of the same type $f(x) = GEN_x \cup (x-KILL_s)$).  
+Now, during our data flow analysis, once we compute $OUT(B)$ for a basic block $B$, we iterate through the instructions of $B$ in the reverse order, and apply the transfer function given above. When we reach the first instruction of the block, its $IN$ will give us $IN(B)$. It seems that unlike the transfer function of live variable analysis, this transfer function is not composable (i.e., after composing over multiple instructions in the block, its final form is not of the same type $f(x) = GEN_x \cup (x-KILL_x)$) because the instructions on which we alter the data flow depends on $OUT(B)$ itself.  
 
 \item \textbf{What is your meet operator? Give the equation that uses the meet operator.} \\
 
@@ -51,14 +51,14 @@ Now, during our data flow analysis, once we compute $OUT(B)$ for a basic block $
 
 \item \textbf{To what values do you initialize the in or out sets ?} \\
 
-  For all other nodes $B$, $IN(B) = OUT(B) = \emptyset$. During the backwards pass, we will populate the $IN$ sets
+  For all other nodes $B$, $IN(B) = \emptyset$. During the backwards pass, we will populate the $IN$ sets
   using the meet operator.
 
 \item \textbf{Does the order that your analysis visits basic blocks matter? What order would you implement and why ?} \\
 
   Yes, since we are doing a backwards analysis, we ideally want to visit all successors of a node before visiting the node itself.
-  Thus, to make the analysis converge faster, we would need to visit the nodes in \textbf{reverse topological order} i.e. we analyse each node
-  at the end of its recursive DFS.
+  Thus, to make the analysis converge faster, we would need to visit the nodes in \textbf{postorder traversal} (reverse topological order) i.e. we analyse each node
+  at the end of its recursive DFS. 
 
 \item \textbf{Will your analysis converge? Why (in words, not a proof) ?} \\
 
@@ -71,16 +71,16 @@ Now, during our data flow analysis, once we compute $OUT(B)$ for a basic block $
 
 \item \textbf{Clearly describe in pseudo-code an algorithm that uses the result of your analysis to identify faint expressions.} \\
 
-  We first compute the set of strongly live variables $SLV$ using the analysis describe above. Once we have the result of that analysis,
-  we use this equation to compute the set of faint variables $FV$,
+  We first compute the set of strongly live variables $SLV(s)$ at each program point $s$ using the analysis describe above. Once we have the result of that analysis,
+  we use this equation to compute the set of faint variables $FV(s)$ at program point $s$,
 
-  $$FV = V \setminus SLV$$
+  $$FV(s) = V \setminus SLV(s)$$
 
-  Here, $V$ is the set of variables in the program. Any expression $expr$ in the program that is being
-  assigned to a faint variable $fv \in FV$ is a \textbf{faint expression}. This can be done thus :\\
+  Here, $V$ is the set of variables in the program. Any expression $expr$ at program point $s$ that is being
+  assigned to a faint variable $fv \in FV(s)$ is a \textbf{faint expression}. This can be done thus :\\
   
   \textbf{for} (each assignment instruction $s$) :\{\\
-  remove $s$ if $LHS(s) \in FV$\\  
+  remove $s$ if $LHS(s) \in FV(s)$\\  
   \}\\
 
 \end{enumerate}
