@@ -12,19 +12,17 @@
 \item \textbf{What is your transfer function? Be sure to clearly define any other sets that your transfer function uses (eg., GEN or KILL etc).} \\
 
   To identify the set of faint variables, we first identify the complementary set of \textbf{strongly live variables}.
-  A strongly live variable is a variable that is used in the assigment of another strongly live variable or within an expression.
+  A strongly live variable is a variable that is used in the assignment of another strongly live variable or within an expression.
   If a variable is not strongly live, then it is a \textbf{faint variable}.
   That is, it is either dead or is used in the assignment of another faint variable.
 
-  For this, we use the transfer function: $IN(B) = GEN_B \cup (OUT(B)-KILL_B)$.
-  Here, $GEN_B$ and $KILL_B$ are same as those used in the \textbf{live variable analysis}.
-  That is,
-  \textbf{$GEN_B$} is the set of variables that are defined in the basic block B prior to any use of that variable in B.
-  \textbf{$KILL_B$} is the set of variables whose values can be used in the basic block B before any definition of the variable in B.
+%  For this, we use the transfer function: $IN(B) = GEN_B \cup (OUT(B)-KILL_B)$.
+%  Here, $GEN_B$ and $KILL_B$ are same as those used in the \textbf{live variable analysis}.
+%  That is,
+%  \textbf{$GEN_B$} is the set of variables that are defined in the basic block B prior to any use of that variable in B.
+%  \textbf{$KILL_B$} is the set of variables whose values can be used in the basic block B before any definition of the variable in B.
 
-  But, the way we propagate and apply the transfer function is different.
-  At any point of execution in the data flow analysis, for a given assignment instruction $s:=  x = f(ops)$, where $x$ is the LHS and $f(ops)$ is the RHS of $s$,
-  we \textbf{alter data flow only if $x$ is strongly live}. That is :
+  For any instruction $s$, let $x$ be variable in the LHS. Let $GEN_s$ be the set of variables in the RHS (like the live variable analysis) and let $KILL_s = \{x\}$. We use the following transfer function, where we \textbf{alter data flow only if $x$ is strongly live}. That is :
 
 \[
 IN(s) = \left\{ 
@@ -34,6 +32,8 @@ OUT(s) & \mbox{if } x \notin OUT(s).
 \end{array}
 \right.
 \]
+
+Now, during our data flow analysis, once we compute $OUT(B)$ for a basic block $B$, we iterate through the instructions of $B$ in the reverse order, and apply the transfer function given above. When we reach the first instruction of the block, its $IN$ will give us $IN(B)$. It seems that unlike the transfer function of live variable analysis, this transfer function is not composable (i.e., after composing over multiple instructions in the block, its final form is not of the same type $f(x) = GEN_x \cup (x-KILL_s)$).  
 
 \item \textbf{What is your meet operator? Give the equation that uses the meet operator.} \\
 
