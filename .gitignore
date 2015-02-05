@@ -21,6 +21,7 @@ GSYMS
 *.log
 *.aux
 *.d
+*.synctex.gz
 *.fls
 
 # Scons
