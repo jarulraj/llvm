@@ -1,5 +1,5 @@
 // 15-745 S15 Assignment 2: liveness.cpp
-// Group: bovik, bovik2
+// Group: jarulraj, nkshah
 ////////////////////// //////////////////////////////////////////////////////////
 
 #include "llvm/IR/Function.h"
@@ -15,23 +15,23 @@ namespace {
   class Liveness : public FunctionPass {
   public:
     static char ID;
-    
-    Liveness() : FunctionPass(ID) { }
-    
-    virtual bool runOnFunction(Function& F) {      
 
-      // Did not modify the incoming Function.      
+    Liveness() : FunctionPass(ID) { }
+
+    virtual bool runOnFunction(Function& F) {
+
+      // Did not modify the incoming Function.
       return false;
     }
-    
+
     virtual void getAnalysisUsage(AnalysisUsage& AU) const {
       AU.setPreservesAll();
     }
-    
-  private:        
+
+  private:
   };
-  
+
   char Liveness::ID = 0;
   RegisterPass<Liveness> X("liveness", "15745 Liveness");
-  
+
 }
