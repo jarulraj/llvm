@@ -54,8 +54,8 @@ DataFlowResult DataFlow::run(Function &F, std::vector<Value*> domain, Direction 
       boundaryBlocks.push_back(&F.front()); 
       break;
       
-    case BACKWARD:													// Exit = blocks with a return statement (could be multiple)
-      for(Function::iterator I = F.begin(), E = F.end(); I != E; ++I)
+    case BACKWARD:		// TODO: Improve this. What if the function has exit(0)? Or use CFGNode from LLVM? 
+      for(Function::iterator I = F.begin(), E = F.end(); I != E; ++I)  // Exit = blocks with a return statement (could be multiple)
         if (isa<ReturnInst>(I->getTerminator()))
           boundaryBlocks.push_back(I);
       break;
@@ -67,7 +67,7 @@ DataFlowResult DataFlow::run(Function &F, std::vector<Value*> domain, Direction 
   *value = boundaryCond;
   boundaryRes.tempTransferOutput.retValue = boundaryCond;
   for (BasicBlockList::iterator I = boundaryBlocks.begin(), E = boundaryBlocks.end(); I != E; ++I) {
-    result[*I] = boundaryRes;
+    result[*I] = boundaryRes;	// TODO: If we run into errors, this might be a cause (pointer problems!)
   }
 
 
@@ -174,7 +174,7 @@ DataFlowResult DataFlow::run(Function &F, std::vector<Value*> domain, Direction 
         *blockInput = applyMeetOp(meetInputs);
 
       //Apply transfer function to input set in order to get output set for this iteration
-      blockRes.tempTransferOutput = transferFn(*blockInput, domainToIndex, *BB);
+      blockRes.tempTransferOutput = transferFn(*blockInput, domainToIndex, *BB);	// TODO: Memoize GEN, KILL (and other stuff) to avoid recomputations
       BitVector* blockOutput = (direction == FORWARD) ? &blockRes.out : &blockRes.in;
       *blockOutput = blockRes.tempTransferOutput.retValue;
 
