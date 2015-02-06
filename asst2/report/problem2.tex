@@ -1,0 +1,41 @@
+\section{Available Expressions}
+
+The tables of EVAL, KILL, IN, and OUT sets obtained after doing the available expression analysis are provided below. 
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{|c|l|l|}
+\hline
+\textbf{BB} & \textbf{EVAL} & \textbf{KILL}\\
+\hline
+1 & $\{c+d,a \times a\}$ & $\{b+c,b+d,b \times b\}$ \\
+\hline
+2 & $\{i+d,c+d\}$ & $\{b+c,b+d,b \times b\}$ \\
+\hline
+3 & $\{b+d,c+d\}$ & $\{a \times a\}$ \\
+\hline
+4 & $\{b+d,b \times b\}$ & $\emptyset$ \\
+\hline
+5 & $\emptyset$ & $\{i+1\}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{|c|l|l|}
+\hline
+\textbf{BB} & \textbf{IN} & \textbf{OUT}\\
+\hline
+1 & $\emptyset$ & $\{c+d,a \times a\}$ \\
+\hline
+2 & $\{c+d\}$ & $\{i+d,c+d\}$ \\
+\hline
+3 & $\{i+d,c+d\}$ & $\{i+d,c+d,b+d\}$ \\
+\hline
+4 & $\{i+d,c+d\}$ & $\{i+d,c+d,b+d,b \times b\}$ \\
+\hline
+5 & $\{i+d,c+d,b+d\}$ & $\{c+d,b+d\}$ \\
+\hline
+\end{tabular}
+\end{table}

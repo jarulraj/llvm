@@ -1,0 +1,62 @@
+\documentclass[letterpaper]{article}
+
+\usepackage{hw}
+\usepackage{bm}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{multicol}
+\usepackage{paralist}
+\usepackage{todonotes}
+\setlength{\marginparwidth}{2.15cm}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{cleveref}
+\usepackage{pdfpages}
+\usepackage{fancyhdr}
+
+%\DeclareMathOperator*{\argmin}{arg\,min}
+%\DeclareMathOperator*{\argmax}{arg\,max}
+
+\def \issoln {1}
+
+% Some commands to allow solutions to be embedded in the assignment file.
+\ifcsname issoln\endcsname \else \def\issoln{0} \fi
+\newcommand{\soln}[1]
+{
+  \if\issoln 1
+  \textbf{Solution:}
+  #1
+  \fi
+}
+
+\newcommand{\email}[1]{\href{mailto:#1@cs.cmu.edu}{#1}}
+
+\pagestyle{fancy}
+\lhead{AID :: \email{jarulraj}, \email{nkshah}}
+
+\begin{document}
+
+\section*{}
+\begin{center}
+  \centerline{\textsc{\LARGE Homework Assignment 2{\if\issoln 2 Solutions \else \fi}}}
+  \vspace{1em}
+  \textsc{\large CMU 15-745: Optimizing Compilers (Spring 2015)} \\
+  \vspace{3em}
+  \centerline{\large{Joy Arulraj (\email{jarulraj}), Nisarg Shah (\email{nkshah})}}
+  \vspace{1em}
+\end{center}
+
+%\input{coding}
+\input{problem1}
+\input{problem2}
+\input{problem3}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "."
+%%% End:

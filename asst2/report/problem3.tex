@@ -1,0 +1,87 @@
+\section{Faint Analysis}
+
+\begin{enumerate}
+\item \textbf{What is the set of elements that your analysis operates on?} \\
+
+  Sets of variables.
+
+\item \textbf{What is the direction of your analysis?} \\
+
+  Backwards (exit to entry).
+
+\item \textbf{What is your transfer function? Be sure to clearly define any other sets that your transfer function uses (eg., GEN or KILL etc).} \\
+
+  To identify the set of faint variables, we first identify the complementary set of \textbf{strongly live variables}.
+  A strongly live variable is a variable that is used in the assignment of another strongly live variable or within an expression.
+  If a variable is not strongly live, then it is a \textbf{faint variable}.
+  That is, it is either dead or is used in the assignment of another faint variable.
+
+%  For this, we use the transfer function: $IN(B) = GEN_B \cup (OUT(B)-KILL_B)$.
+%  Here, $GEN_B$ and $KILL_B$ are same as those used in the \textbf{live variable analysis}.
+%  That is,
+%  \textbf{$GEN_B$} is the set of variables that are defined in the basic block B prior to any use of that variable in B.
+%  \textbf{$KILL_B$} is the set of variables whose values can be used in the basic block B before any definition of the variable in B.
+
+  For any instruction $s$, let $x$ be variable in the LHS. Let $GEN_s$ be the set of variables in the RHS (like the live variable analysis) and let $KILL_s = \{x\}$. We use the following transfer function, where we \textbf{alter data flow only if $x$ is strongly live}. That is :
+
+\[
+IN(s) = \left\{ 
+\begin{array}{ll}
+GEN_s \cup (OUT(s)-KILL_s) & \mbox{if } x \in OUT(s),\\
+OUT(s) & \mbox{if } x \notin OUT(s).
+\end{array}
+\right.
+\]
+
+Now, during our data flow analysis, once we compute $OUT(B)$ for a basic block $B$, we iterate through the instructions of $B$ in the reverse order, and apply the transfer function given above. When we reach the first instruction of the block, its $IN$ will give us $IN(B)$. It seems that unlike the transfer function of live variable analysis, this transfer function is not composable (i.e., after composing over multiple instructions in the block, its final form is not of the same type $f(x) = GEN_x \cup (x-KILL_x)$) because the instructions on which we alter the data flow depends on $OUT(B)$ itself.  
+
+\item \textbf{What is your meet operator? Give the equation that uses the meet operator.} \\
+
+  The meet operator for \textbf{strongly live variable analysis} is \textbf{union}. Thus,
+
+  $OUT(B) = \cup_{B' : successor(B)} IN(B')$.
+
+  This is because a variable that is strongly live in any successor block must also strongly live at the exit of a basic block. 
+
+\item \textbf{To what value do you initialize exit and/or entry ?} \\
+
+  $IN(exit) = \emptyset$
+
+  This is because no variable is strongly live at exit. Note that the analysis is done backwards.
+
+\item \textbf{To what values do you initialize the in or out sets ?} \\
+
+  For all other nodes $B$, $IN(B) = \emptyset$. During the backwards pass, we will populate the $IN$ sets
+  using the meet operator.
+
+\item \textbf{Does the order that your analysis visits basic blocks matter? What order would you implement and why ?} \\
+
+  Yes, since we are doing a backwards analysis, we ideally want to visit all successors of a node before visiting the node itself.
+  Thus, to make the analysis converge faster, we would need to visit the nodes in \textbf{postorder traversal} (reverse topological order) i.e. we analyse each node
+  at the end of its recursive DFS. 
+
+\item \textbf{Will your analysis converge? Why (in words, not a proof) ?} \\
+
+  Yes, intuitively, the $IN$ and $OUT$ sets of each basic block are $n$-bit vectors (where $n$ is the number of variables).
+  In each iteration, at least one more bit is set in the $IN$ or $OUT$ set of at least one basic block (otherwise we stop the analysis).
+  Further, no bit that is set is ever unset.
+  So, the analysis must converge in finitely many iterations.
+  Formally, for this data flow framework, the semilattice is \textbf{monotone} and its height is \textbf{finite}.
+  Therefore, the analysis is guaranteed to converge.
+
+\item \textbf{Clearly describe in pseudo-code an algorithm that uses the result of your analysis to identify faint expressions.} \\
+
+  We first compute the set of strongly live variables $SLV(s)$ at each program point $s$ using the analysis described above.
+  Once we have the result of that analysis,
+  we use this equation to compute the set of faint variables $FV(s)$ at program point $s$,
+
+  $$FV(s) = V \setminus SLV(s)$$
+
+  Here, $V$ is the set of variables in the program. Any expression $expr$ at program point $s$ that is being
+  assigned to a faint variable $fv \in FV(s)$ is a \textbf{faint expression}. This can be done thus :\\
+  
+  \textbf{for} (each assignment instruction $p$) :\{\\
+  remove $p$ if $LHS(s) \in FV(s)$, where $s$ is the program point immediately after $p$\\  
+  \}\\
+
+\end{enumerate}
