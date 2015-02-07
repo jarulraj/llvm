@@ -1,4 +1,4 @@
-all: liveness.so available.so inputs
+all: liveness.so inputs
 
 CXX = clang
 CXXFLAGS = $(shell llvm-config --cxxflags) -fcolor-diagnostics -g -O0

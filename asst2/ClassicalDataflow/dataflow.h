@@ -18,6 +18,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include <vector>
+#include <map>
 #include "llvm/ADT/PostOrderIterator.h"
 
 using namespace std;
@@ -40,7 +41,7 @@ namespace llvm {
         We also store a list of BitVectors corresponding to predecessors/successors used to handle phi nodes) */
     struct TransferOutput {
         BitVector element;
-        DenseMap<BasicBlock*, BitVector> neighborVals;
+        std::map<BasicBlock*, BitVector> neighborVals;
     };
 
     /* Stores the IN and OUT sets for a basic block. Also a variable to store the temporary output of the transfer function */
@@ -66,11 +67,11 @@ namespace llvm {
     /* Result of pass on a function */
     struct DataFlowResult {
         /* Mapping from basic blocks to their results */
-        DenseMap<BasicBlock*, BlockResult> result;
+        std::map<BasicBlock*, BlockResult> result;
 
         /* Mapping from domain elements to indices in bitvectors
            (to figure out which bits are which values) */
-        DenseMap<void*, int> domainToIndex;
+        std::map<void*, int> domainToIndex;
 
         bool modified;
     };
@@ -79,10 +80,8 @@ namespace llvm {
     class DataFlow {
     public:
 
-    DataFlow(std::vector<void*> domain, Direction direction, MeetOp meetup_op,
-             BitVector boundaryCond, BitVector initCond)
-        : domain(domain), direction(direction), meetup_op(meetup_op),
-            boundaryCond(boundaryCond), initCond(initCond)
+    DataFlow(Direction direction, MeetOp meetup_op)
+        : direction(direction), meetup_op(meetup_op)
         {
         }
 
@@ -90,21 +89,20 @@ namespace llvm {
         BitVector applyMeetOp(BitVectorList inputs);
 
         /* Apply analysis on Function F */
-        DataFlowResult run(Function &F) ;
+        DataFlowResult run(Function &F, std::vector<void*> domain,
+                           BitVector boundaryCond, BitVector initCond);
 
     protected:
         /*      Transfer Function: To be implmented by the specific analysis.
                 Takes one set (IN/OUT), domain to index mapping, basic block, and outputs the other set (OUT/IN) */
-        virtual TransferOutput transferFn(BitVector input, DenseMap<void*, int> domainToIndex, BasicBlock* block) = 0;
+        virtual TransferOutput transferFn(BitVector input,
+                                          std::map<void*, int> domainToIndex, BasicBlock* block) = 0;
 
     private:
 
         /* Pass-specific parameters */
-        std::vector<void*> domain;
         Direction direction;
         MeetOp meetup_op;
-        BitVector boundaryCond;
-        BitVector initCond;
     };
 
 }

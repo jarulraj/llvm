@@ -19,16 +19,10 @@ namespace {
     Liveness() : FunctionPass(ID) {
 
       // Setup the pass
-      std::vector<void*> domain;
-
       Direction direction = Direction::BACKWARD;
       MeetOp meet_op = MeetOp::UNION;
 
-      BitVector boundaryCond;
-      BitVector initCond;
-
-      pass = LivenessAnalysis(domain, direction, meet_op,
-                              boundaryCond, initCond);
+      pass = LivenessAnalysis(direction, meet_op);
     }
 
     virtual void getAnalysisUsage(AnalysisUsage& AU) const {
@@ -42,24 +36,19 @@ namespace {
     public:
 
       LivenessAnalysis()
-        :        DataFlow(std::vector<void*>(),
-                          Direction::INVALID_DIRECTION,
-                          MeetOp::INVALID_MEETOP,
-                          BitVector(), BitVector())
+        :        DataFlow(Direction::INVALID_DIRECTION,
+                          MeetOp::INVALID_MEETOP)
       {
       }
 
-      LivenessAnalysis(std::vector<void*> domain,
-                       Direction dir, MeetOp op,
-                       BitVector boundaryCond, BitVector initCond)
-        : DataFlow(domain, dir, op,
-                   boundaryCond, initCond)
+      LivenessAnalysis(Direction direction, MeetOp meet_op)
+        : DataFlow(direction, meet_op)
       {
 
       }
 
     protected:
-      TransferOutput transferFn(BitVector input, DenseMap<void*, int> domainToIndex,
+      TransferOutput transferFn(BitVector input, std::map<void*, int> domainToIndex,
                                 BasicBlock* block)
       {
         TransferOutput transferOutput;
@@ -80,10 +69,81 @@ namespace {
       DBG(outs() << "FUNCTION :: " << function_name  << "\n");
       DataFlowResult output;
 
+      // Setup the pass
+      std::vector<void*> domain;
+
+      // Compute domain for function
+      User::op_iterator OI, OE;
+
+      for(Function::iterator FI = F.begin(), FE = F.end(); FI != FE; ++FI) {
+        BasicBlock& B(*FI);
+
+        for(BasicBlock::iterator BI = B.begin(), BE = B.end(); BI != BE; ++BI) {
+          Instruction& insn(*BI);
+
+          // Look for instruction-defined values and function args
+          for (OI = insn.op_begin(), OE = insn.op_end(); OI != OE; ++OI)
+          {
+            Value *val = *OI;
+            if (isa<Instruction>(val) || isa<Argument>(val)) {
+              // Val is used by insn
+              domain.push_back(val);
+            }
+          }
+
+        }
+
+      }
+
+      DBG(outs() << "------------------------------------------\n\n");
+      DBG(outs() << "DOMAIN :: " << domain.size() << "\n");
+      for(void* element : domain)
+      {
+        DBG(outs() << "Element : " << *((Value*) element) << "\n");
+      }
+      DBG(outs() << "------------------------------------------\n\n");
+
+      // For LVA, both are empty sets
+      BitVector boundaryCond(domain.size(), false);
+      BitVector initCond(domain.size(), false);
+
       // Apply pass
-      output = pass.run(F);
+      output = pass.run(F, domain, boundaryCond, initCond);
+
+      printResult(output);
 
       return modified;
+    }
+
+    void printResult(DataFlowResult output)
+    {
+      for(auto entry : output.result)
+      {
+        DBG(outs() << "BB  " << entry.first->getName() << "\n");
+
+        printBitVector(entry.second.in);
+        printBitVector(entry.second.out);
+      }
+    }
+
+    void printBitVector(BitVector b)
+    {
+      unsigned int i;
+      unsigned int b_size = b.size();
+
+      if(b_size == 0)
+        DBG(outs() << "-");
+      else
+      {
+        for(i = 0; i < b.size() ; i++)
+        {
+          if(b[i] == true)
+            DBG(outs() << "1");
+          else
+            DBG(outs() << "0");
+        }
+      }
+      DBG(outs() << "\n");
     }
 
     virtual bool runOnModule(Module& M) {

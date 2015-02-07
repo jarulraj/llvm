@@ -36,14 +36,15 @@ namespace llvm {
     }
 
     /* Apply analysis on Function F */
-    DataFlowResult DataFlow::run(Function &F) {
-        DenseMap<BasicBlock*, BlockResult> result;
+    DataFlowResult DataFlow::run(Function &F, std::vector<void*> domain,
+                                 BitVector boundaryCond, BitVector initCond) {
+        std::map<BasicBlock*, BlockResult> result;
         bool modified = false;
 
         DBG(outs() << "APPLY ANALYSIS :: \n");
 
         // Map domain values to index in bitvector
-        DenseMap<void*, int> domainToIndex;
+        std::map<void*, int> domainToIndex;
         for (int i = 0; i < domain.size(); i++)
             domainToIndex[domain[i]] = i;
 
@@ -69,6 +70,9 @@ namespace llvm {
             break;
         }
 
+        DBG(outs() << "Boundary Blocks :" << boundaryBlocks.size() << "\n");
+        //DBG(outs() << "Initialize Boundary Blocks \n");
+
         // Initialize Boundary Blocks
         BlockResult boundaryRes = BlockResult();
         // Forward analysis => Initialize IN, Backward analysis => OUT
@@ -79,6 +83,8 @@ namespace llvm {
         for (BasicBlockList::iterator I = boundaryBlocks.begin(), E = boundaryBlocks.end(); I != E; ++I) {
             result[*I] = boundaryRes;	// TODO: If we run into errors, this might be a cause (pointer problems!)
         }
+
+        //DBG(outs() << "Initialize Interior Blocks \n");
 
         // Initialize Interior Blocks
         BlockResult intRes = BlockResult();
@@ -94,9 +100,11 @@ namespace llvm {
             }
         }
 
+        //DBG(outs() << "Generate Neighbour list \n");
+
         // Generate "neighbor" list: For forward analysis, these are predecessors, for backward analysis these are successors
         // So we won't have to switch on direction every time
-        DenseMap<BasicBlock*, BasicBlockList > blockNeighbors;
+        std::map<BasicBlock*, BasicBlockList > blockNeighbors;
 
         for (Function::iterator BB = F.begin(), BE = F.end(); BB != BE; ++BB) {
             BasicBlockList neighborList;
@@ -119,7 +127,18 @@ namespace llvm {
             }
 
             blockNeighbors[BB] = neighborList;
+
+            /*
+            DBG(outs() << "NeighborList for block : " << BB->getName() << "\n");
+            for(BasicBlock *neighbor : neighborList)
+            {
+                DBG(outs() << neighbor->getName() << " ");
+            }
+            DBG(outs() << "\n");
+            */
         }
+
+        //DBG(outs() << "Prepare traversal order \n");
 
         // Prepare an order in which we will traverse BasicBlocks. This is to prevent having to write analysis code twice (for each direction)
         BasicBlockList traversalOrder;
@@ -146,6 +165,10 @@ namespace llvm {
             break;
         }
 
+        DBG(outs() << "Traversal length : " << traversalOrder.size() << "\n");
+
+        DBG(outs() << "Start analysis \n");
+
         // Keep processing blocks until convergence
         bool converged = false;
         while (!converged) {
@@ -168,7 +191,7 @@ namespace llvm {
                     BitVector neighVal = neighborRes.transferOutput.element;
 
                     // Union the value if we find a match with neighbor-specific value
-                    DenseMap<BasicBlock*, BitVector>::iterator match = neighborRes.transferOutput.neighborVals.find(*BB);
+                    std::map<BasicBlock*, BitVector>::iterator match = neighborRes.transferOutput.neighborVals.find(*BB);
                     if (match != neighborRes.transferOutput.neighborVals.end()) {
                         neighVal |= match->second;
                     }
@@ -197,6 +220,8 @@ namespace llvm {
                 }
             }
         }
+
+        //DBG(outs() << "Setup output \n");
 
         // Setup output
         DataFlowResult output;
