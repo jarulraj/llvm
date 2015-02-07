@@ -15,20 +15,30 @@
 #include "llvm/IR/ValueMap.h"
 #include "llvm/IR/CFG.h"
 #include "llvm/ADT/SmallSet.h"
+#include "llvm/Support/raw_ostream.h"
+
+// DEBUG mode
+#define DEBUG 1
+
+#ifdef DEBUG
+#define DBG(a) a
+#else
+#define DBG(a)
+#endif
 
 namespace llvm {
 
     typedef std::vector<BitVector> BitVectorList;
     typedef std::vector<BasicBlock*> BasicBlockList;
 
-/*	For storing the output of a transfer function.
+    /*	For storing the output of a transfer function.
         We also store a list of BitVectors corresponding to predecessors/successors used to handle phi nodes) */
     struct TransferOutput {
         BitVector retValue;
         DenseMap<BasicBlock*, BitVector> neighborVals;
     };
 
-/* Stores the IN and OUT sets for a basic block. Also a variable to store the temporary output of the transfer function */
+    /* Stores the IN and OUT sets for a basic block. Also a variable to store the temporary output of the transfer function */
     struct BlockResult {
         BitVector in;
         BitVector out;
@@ -36,7 +46,7 @@ namespace llvm {
         TransferOutput tempTransferOutput;
     };
 
-/* Result of Data Flow Analysis */
+    /* Result of Data Flow Analysis */
     struct DataFlowResult {
 
         /* Mapping from basic blocks to their results */
@@ -47,7 +57,7 @@ namespace llvm {
 
     };
 
-/* Basic Class for Data flow analysis. Specific analyses must extend this */
+    /* Basic Class for Data flow analysis. Specific analyses must extend this */
     class DataFlow {
     public:
         enum Direction {

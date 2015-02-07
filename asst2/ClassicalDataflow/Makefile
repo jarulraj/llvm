@@ -1,7 +1,7 @@
 all: liveness.so available.so inputs
 
 CXX = clang
-CXXFLAGS = -rdynamic $(shell llvm-config --cxxflags) -g -O0
+CXXFLAGS = -rdynamic $(shell llvm-config --cxxflags) -fcolor-diagnostics -g -O0
 OPT = opt
 TEST = test-inputs
 
