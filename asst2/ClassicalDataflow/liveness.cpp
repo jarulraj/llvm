@@ -19,7 +19,7 @@ namespace {
     Liveness() : FunctionPass(ID) {
 
       // Setup the pass
-      std::vector<Value*> domain;
+      std::vector<void*> domain;
 
       Direction direction = Direction::BACKWARD;
       MeetOp meet_op = MeetOp::UNION;
@@ -38,28 +38,28 @@ namespace {
   private:
 
     // Liveness Analysis class
-    class LivenessAnalysis : public DataFlow<Value*> {
+    class LivenessAnalysis : public DataFlow {
     public:
 
       LivenessAnalysis()
-        :        DataFlow<Value*>(std::vector<Value*>(),
-                                  Direction::INVALID_DIRECTION,
-                                  MeetOp::INVALID_MEETOP,
-                                  BitVector(), BitVector())
+        :        DataFlow(std::vector<void*>(),
+                          Direction::INVALID_DIRECTION,
+                          MeetOp::INVALID_MEETOP,
+                          BitVector(), BitVector())
       {
       }
 
-      LivenessAnalysis(std::vector<Value*> domain,
+      LivenessAnalysis(std::vector<void*> domain,
                        Direction dir, MeetOp op,
                        BitVector boundaryCond, BitVector initCond)
-        : DataFlow<Value*>(domain, dir, op,
-                           boundaryCond, initCond)
+        : DataFlow(domain, dir, op,
+                   boundaryCond, initCond)
       {
 
       }
 
     protected:
-      TransferOutput transferFn(BitVector input, DenseMap<Value*, int> domainToIndex,
+      TransferOutput transferFn(BitVector input, DenseMap<void*, int> domainToIndex,
                                 BasicBlock* block)
       {
         TransferOutput transferOutput;
@@ -78,9 +78,10 @@ namespace {
       // Print Information
       std::string function_name = F.getName();
       DBG(outs() << "FUNCTION :: " << function_name  << "\n");
+      DataFlowResult output;
 
       // Apply pass
-      pass.run(F);
+      output = pass.run(F);
 
       return modified;
     }
