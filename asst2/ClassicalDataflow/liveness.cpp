@@ -12,24 +12,45 @@ using namespace llvm;
 
 namespace {
 
-  class Liveness : public FunctionPass, DataFlow {
+  class Liveness : public FunctionPass {
   public:
     static char ID;
 
-    Liveness() : FunctionPass(ID) { }
+    Liveness() : FunctionPass(ID) {
+
+      // Setup pass
+      //LivenessAnalysis pass(Direction::BACKWARD, MeetOp::UNION);
+
+    }
 
     virtual void getAnalysisUsage(AnalysisUsage& AU) const {
       AU.setPreservesAll();
     }
 
-    TransferOutput transferFn(BitVector input, DenseMap<Value*, int> domainToIndex, BasicBlock* block)
-    {
-      TransferOutput tempTransferOutput;
-
-      return tempTransferOutput;
-    }
-
   private:
+
+    // Liveness Analysis class
+    class LivenessAnalysis : public DataFlow<Value*> {
+    public:
+      LivenessAnalysis(std::vector<Value*> domain,
+                       Direction dir, MeetOp op,
+                       BitVector boundaryCond, BitVector initCond)
+        : DataFlow<Value*>(domain, dir, op,
+                           boundaryCond, initCond)
+      {
+
+      }
+
+    protected:
+
+      TransferOutput transferFn(BitVector input, DenseMap<Value*, int> domainToIndex, BasicBlock* block)
+      {
+        TransferOutput transferOutput;
+
+        return transferOutput;
+      }
+
+    };
 
     virtual bool runOnFunction(Function &F) {
       bool modified = false;
@@ -38,8 +59,8 @@ namespace {
       std::string function_name = F.getName();
       DBG(outs() << "FUNCTION :: " << function_name  << "\n");
 
-      DataFlowResult df_result;
-      //df_result = run(F, domain, Direction , MeetOp meet, BitVector boundaryCond, BitVector initCond);
+      // Apply pass
+      //DataFlowResult<Value*> df_result = pass.apply(F);
 
       return modified;
     }

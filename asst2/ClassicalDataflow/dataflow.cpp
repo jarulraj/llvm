@@ -11,7 +11,8 @@ using namespace std;
 namespace llvm {
 
     /* Applying Meet Operator */
-    BitVector DataFlow::applyMeetOp(BitVectorList inputs) {
+    template<class Element>
+    BitVector DataFlow<Element>::applyMeetOp(BitVectorList inputs) {
         BitVector result;
 
         if (!inputs.empty()) {
@@ -20,10 +21,10 @@ namespace llvm {
                     result = inputs[i];
                 }
                 else {
-                    if (_op == MeetOp::UNION) {
+                    if (meetup_op == MeetOp::UNION) {
                         result |= inputs[i];
                     }
-                    else if (_op == MeetOp::INTERSECTION) {
+                    else if (meetup_op == MeetOp::INTERSECTION) {
                         result &= inputs[i];
                     }
                     else{
@@ -37,11 +38,13 @@ namespace llvm {
         return result;
     }
 
-    DataFlowResult DataFlow::run(Function &F, std::vector<Value*> domain, Direction direction, MeetOp meet, BitVector boundaryCond, BitVector initCond) {
+    /* Apply analysis on Function F */
+    template<class Element>
+    DataFlowResult<Element> DataFlow<Element>::apply(Function &F) {
         DenseMap<BasicBlock*, BlockResult> result;
 
         // Map domain values to index in bitvector
-        DenseMap<Value*, int> domainToIndex;
+        DenseMap<Element, int> domainToIndex;
         for (int i = 0; i < domain.size(); i++)
             domainToIndex[domain[i]] = i;
 
@@ -69,7 +72,7 @@ namespace llvm {
         BitVector* value = (direction == Direction::FORWARD) ? &boundaryRes.in : &boundaryRes.out;
 
         *value = boundaryCond;
-        boundaryRes.tempTransferOutput.retValue = boundaryCond;
+        boundaryRes.transferOutput.element = boundaryCond;
         for (BasicBlockList::iterator I = boundaryBlocks.begin(), E = boundaryBlocks.end(); I != E; ++I) {
             result[*I] = boundaryRes;	// TODO: If we run into errors, this might be a cause (pointer problems!)
         }
@@ -80,7 +83,7 @@ namespace llvm {
         BitVector* intVal = (direction == Direction::FORWARD) ? &intRes.out : &intRes.in;
 
         *intVal = initCond;
-        intRes.tempTransferOutput.retValue = initCond;
+        intRes.transferOutput.element = initCond;
         for (Function::iterator BB = F.begin(), BE = F.end(); BB != BE; ++BB) {
             if (std::find(boundaryBlocks.begin(),boundaryBlocks.end(),(BasicBlock*)BB) == boundaryBlocks.end()) {
                 // If it is not one of the boundary blocks
@@ -155,11 +158,11 @@ namespace llvm {
 
                 for (BasicBlockList::iterator NI = blockNeighbors[*BB].begin(), NE = blockNeighbors[*BB].end(); NI != NE; ++NI) {
                     BlockResult& neighborRes = result[*NI];
-                    BitVector neighVal = neighborRes.tempTransferOutput.retValue;
+                    BitVector neighVal = neighborRes.transferOutput.element;
 
                     // Union the value if we find a match with neighbor-specific value
-                    DenseMap<BasicBlock*, BitVector>::iterator match = neighborRes.tempTransferOutput.neighborVals.find(*BB);
-                    if (match != neighborRes.tempTransferOutput.neighborVals.end()) {
+                    DenseMap<BasicBlock*, BitVector>::iterator match = neighborRes.transferOutput.neighborVals.find(*BB);
+                    if (match != neighborRes.transferOutput.neighborVals.end()) {
                         neighVal |= match->second;
                     }
 
@@ -172,23 +175,27 @@ namespace llvm {
                     *blockInput = applyMeetOp(meetInputs);
 
                 //Apply transfer function to input set in order to get output set for this iteration
-                blockRes.tempTransferOutput = transferFn(*blockInput, domainToIndex, *BB);	// TODO: Memoize GEN, KILL (and other stuff) to avoid recomputations
+                blockRes.transferOutput = transferFn(*blockInput, domainToIndex, *BB);
+                // TODO: Memoize GEN, KILL (and other stuff) to avoid recomputations
                 BitVector* blockOutput = (direction == Direction::FORWARD) ? &blockRes.out : &blockRes.in;
-                *blockOutput = blockRes.tempTransferOutput.retValue;
+                *blockOutput = blockRes.transferOutput.element;
 
                 // If something changed, set converged to false
                 if (converged) {
-                    // Either the IN/OUT set itself changed, or a neighbor-specific value changed (actually, for phi nodes, the size will also change, so can just check that)
-                    if (*blockOutput != oldVal || blockRes.tempTransferOutput.neighborVals.size() != oldBlockRes.tempTransferOutput.neighborVals.size())
+                    // Either the IN/OUT set itself changed, or a neighbor-specific value changed
+                    // (actually, for phi nodes, the size will also change, so can just check that)
+                    if (*blockOutput != oldVal ||
+                        blockRes.transferOutput.neighborVals.size() != oldBlockRes.transferOutput.neighborVals.size())
                         converged = false;
                 }
             }
         }
 
-        // Create output
-        DataFlowResult answer;
+        // Create result
+        DataFlowResult<Element> answer;
         answer.domainToIndex = domainToIndex;
         answer.result = result;
+
         return answer;
     }
 

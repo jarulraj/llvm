@@ -34,7 +34,7 @@ namespace llvm {
     /*	For storing the output of a transfer function.
         We also store a list of BitVectors corresponding to predecessors/successors used to handle phi nodes) */
     struct TransferOutput {
-        BitVector retValue;
+        BitVector element;
         DenseMap<BasicBlock*, BitVector> neighborVals;
     };
 
@@ -43,46 +43,62 @@ namespace llvm {
         BitVector in;
         BitVector out;
 
-        TransferOutput tempTransferOutput;
+        TransferOutput transferOutput;
     };
 
     /* Result of Data Flow Analysis */
-    struct DataFlowResult {
+    template<class Element> class DataFlowResult {
 
         /* Mapping from basic blocks to their results */
         DenseMap<BasicBlock*, BlockResult> result;
 
-        /* Mapping from domain values to indices in bitvectors (to figure out which bits are which values) */
-        DenseMap<Value*, int> domainToIndex;
+        /* Mapping from domain elements to indices in bitvectors
+           (to figure out which bits are which values) */
+        DenseMap<Element, int> domainToIndex;
 
     };
 
+    enum Direction {
+        FORWARD,
+        BACKWARD
+    };
+
+    enum MeetOp {
+        UNION,
+        INTERSECTION
+    };
+
     /* Basic Class for Data flow analysis. Specific analyses must extend this */
-    class DataFlow {
+    template<class Element> class DataFlow {
     public:
-        enum Direction {
-            FORWARD,
-            BACKWARD
-        };
+        /* Simple constructor */
+        DataFlow<Element>(std::vector<Element> domain,
+                          Direction direction, MeetOp meetup_op,
+                          BitVector boundaryCond, BitVector initCond)
+            : domain(domain), direction(direction), meetup_op(meetup_op),
+            boundaryCond(boundaryCond), initCond(initCond)
+        {
+        }
 
-        enum MeetOp {
-            UNION,
-            INTERSECTION
-        };
-
-        /* Storing The Meet Operator */
-        MeetOp _op;
-
-        /** Apply meet operator */
+        /* Apply meet operator */
         BitVector applyMeetOp(BitVectorList meetInputs);
 
-        /** Run analysis on Function F */
-        DataFlowResult run(Function& F, std::vector<Value*> domain, Direction direction, MeetOp op, BitVector boundaryCond, BitVector initCond);
+        /* Apply analysis on Function F */
+        DataFlowResult<Element> apply(Function& F);
 
     protected:
         /*      Transfer Function: To be implmented by the specific analysis.
                 Takes one set (IN/OUT), domain to index mapping, basic block, and outputs the other set (OUT/IN) */
-        virtual TransferOutput transferFn(BitVector input, DenseMap<Value*, int> domainToIndex, BasicBlock* block) = 0;
+        virtual TransferOutput transferFn(BitVector input, DenseMap<Element, int> domainToIndex, BasicBlock* block) = 0;
+
+    private:
+
+        /* Pass-specific parameters */
+        std::vector<Element> domain;
+        Direction direction;
+        MeetOp meetup_op;
+        BitVector boundaryCond;
+        BitVector initCond;
     };
 
 }
