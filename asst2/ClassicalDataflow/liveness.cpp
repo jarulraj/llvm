@@ -5,8 +5,10 @@
 #include "llvm/IR/Function.h"
 #include "llvm/Pass.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/InstIterator.h"
 
 #include "dataflow.h"
+#include "available-support.h"
 
 using namespace llvm;
 
@@ -35,23 +37,62 @@ namespace {
     class LivenessAnalysis : public DataFlow {
     public:
 
-      LivenessAnalysis()
-        :        DataFlow(Direction::INVALID_DIRECTION,
-                          MeetOp::INVALID_MEETOP)
-      {
-      }
-
-      LivenessAnalysis(Direction direction, MeetOp meet_op)
-        : DataFlow(direction, meet_op)
-      {
-
-      }
-
+		LivenessAnalysis() : DataFlow(Direction::INVALID_DIRECTION, MeetOp::INVALID_MEETOP) {	}
+		LivenessAnalysis(Direction direction, MeetOp meet_op) : DataFlow(direction, meet_op) { }
+		
     protected:
-      TransferOutput transferFn(BitVector input, std::map<void*, int> domainToIndex,
-                                BasicBlock* block)
+      TransferOutput transferFn(BitVector input, std::map<void*, int> domainToIndex, BasicBlock* block)
       {
+      
         TransferOutput transferOutput;
+
+		    // Calculating the set of locally exposed uses and variables defined
+		    int domainSize = domainToIndex.size();
+		    BitVector defSet(domainSize);
+		    BitVector useSet(domainSize);
+		    for (BasicBlock::iterator insn = block->begin(); insn != block->end(); ++insn) {
+		      // Locally exposed uses
+		      
+		      // Phi nodes: add operands to the list we store in transferOutput
+		      if (PHINode* phi_insn = dyn_cast<PHINode>(&*insn)) {
+		        for (int ind = 0; ind < phi_insn->getNumIncomingValues(); ind++) {
+		        
+		          Value* val = phi_insn->getIncomingValue(ind);
+		          if (isa<Instruction>(val) || isa<Argument>(val)) {
+		          
+		            BasicBlock* valBlock = phi_insn->getIncomingBlock(ind);
+		            if (transferOutput.neighborVals.find(valBlock) == transferOutput.neighborVals.end())	// neighborVals has no mapping for this block, then create one
+		              transferOutput.neighborVals[valBlock] = BitVector(domainSize);
+		            int valInd = domainToIndex[(void*)val];
+		            transferOutput.neighborVals[valBlock].set(valInd);	// Set the bit corresponding to "val"
+		            
+		          }
+		        }
+		      }
+		      
+		      //Non-phi nodes: Simply add operands to the use set
+		      else {
+		        for (User::op_iterator opnd = insn->op_begin(), opE = insn->op_end(); opnd != opE; ++opnd) {
+		          Value* val = *opnd;
+		          if (isa<Instruction>(val) || isa<Argument>(val)) {
+		            int valInd = domainToIndex[(void*)val];
+		            if (!defSet[valInd])	// Add to useSet only if not already defined in the block somewhere earlier
+		              useSet.set(valInd);
+		          }
+		        }
+		      }
+
+		      // Definitions
+		      std::map<void*, int>::iterator iter = domainToIndex.find((void*)insn);
+		      if (iter != domainToIndex.end())
+		        defSet.set((*iter).second);
+		    }
+
+		    // Transfer function = useSet U (input - defSet)
+		    transferOutput.element = defSet;
+		    transferOutput.element.flip();	// Complement of defSet
+		    transferOutput.element &= input;	// input - defSet = input INTERSECTION Complement of defSet
+		    transferOutput.element |= useSet;
 
         return transferOutput;
       }
@@ -73,33 +114,26 @@ namespace {
       std::vector<void*> domain;
 
       // Compute domain for function
-      User::op_iterator OI, OE;
 
-      for(Function::iterator FI = F.begin(), FE = F.end(); FI != FE; ++FI) {
-        BasicBlock& B(*FI);
-
-        for(BasicBlock::iterator BI = B.begin(), BE = B.end(); BI != BE; ++BI) {
-          Instruction& insn(*BI);
-
-          // Look for instruction-defined values and function args
-          for (OI = insn.op_begin(), OE = insn.op_end(); OI != OE; ++OI)
-          {
-            Value *val = *OI;
-            if (isa<Instruction>(val) || isa<Argument>(val)) {
-              // Val is used by insn
-              domain.push_back(val);
-            }
+      for(inst_iterator II = inst_begin(F), IE = inst_end(F); II!=IE; ++II) {
+      	Instruction& insn(*II);
+        // Look for insn-defined values and function args
+        for (User::op_iterator OI = insn.op_begin(), OE = insn.op_end(); OI != OE; ++OI)
+        {
+          Value *val = *OI;
+          if (isa<Instruction>(val) || isa<Argument>(val)) {
+            // Val is used by insn
+            if(std::find(domain.begin(),domain.end(),val) == domain.end())
+	            domain.push_back((void*)val);
           }
-
         }
-
       }
 
       DBG(outs() << "------------------------------------------\n\n");
       DBG(outs() << "DOMAIN :: " << domain.size() << "\n");
       for(void* element : domain)
       {
-        DBG(outs() << "Element : " << *((Value*) element) << "\n");
+        DBG(outs() << "Element : " << *((Value*) element) << "\n"); // Could also use getShortValueName((Value*) element)
       }
       DBG(outs() << "------------------------------------------\n\n");
 
@@ -119,7 +153,7 @@ namespace {
     {
       for(auto entry : output.result)
       {
-        DBG(outs() << "BB  " << entry.first->getName() << "\n");
+        DBG(outs() << "BB " << entry.first->getName() << "\n");
 
         printBitVector(entry.second.in);
         printBitVector(entry.second.out);

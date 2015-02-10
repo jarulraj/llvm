@@ -46,7 +46,7 @@ namespace llvm {
         // Map domain values to index in bitvector
         std::map<void*, int> domainToIndex;
         for (int i = 0; i < domain.size(); i++)
-            domainToIndex[domain[i]] = i;
+            domainToIndex[(void*)domain[i]] = i;
 
         // Find Boundary Blocks
         BasicBlockList boundaryBlocks;

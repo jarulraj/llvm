@@ -61,6 +61,7 @@ namespace llvm {
     case Instruction::And: op = "&"; break;
     case Instruction::Or: op = "|"; break;
     case Instruction::Xor: op = "xor"; break;
+    default: op = "op"; break;
     }
     return getShortValueName(v1) + " " + op + " " + getShortValueName(v2);
   }

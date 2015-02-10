@@ -7,6 +7,8 @@ TEST = test-inputs
 
 dataflow.o: dataflow.cpp dataflow.h
 
+liveness.o: liveness.cpp available-support.h
+
 available-support.o: available-support.cpp available-support.h	
 
 %.so: %.o dataflow.o available-support.o
