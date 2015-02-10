@@ -36,4 +36,4 @@ pdf: $(patsubst %.cpp,%.pdf,$(wildcard ./*.cpp))  $(patsubst %.c,%.pdf,$(wildcar
  
 # CLEAN
 clean:
-	rm -f *.o *~ *.so *.pdf $(TEST)/*.bc out $(TEST)/*.pdf                 
+	rm -f *.o *~ *.so *.pdf out $(TEST)/*.pdf                 
