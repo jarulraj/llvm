@@ -10,6 +10,7 @@
 #include "dataflow.h"
 #include "available-support.h"
 #include <sstream>
+#include <iomanip>
 
 using namespace llvm;
 
@@ -201,6 +202,7 @@ namespace {
             // For LVA, both are empty sets
             BitVector boundaryCond(domain.size(), false);
             BitVector initCond(domain.size(), false);
+            std::stringstream ss;
 
             // Apply pass
             output = pass.run(F, domain, boundaryCond, initCond);
@@ -216,15 +218,19 @@ namespace {
                 // Generate Print Information in Reverse Order
                 std::vector<std::string> revOut;
 
+                revOut.push_back("---------------------------");
+
                 // Print live variables at the end of the block
-                revOut.push_back("------------------------------------------------------");
-                revOut.push_back("\nOUT Live Set: " + printSet(domain, liveValues) + "\n");
+                ss.clear();
+                ss.str(std::string());
+                ss << printSet(domain, liveValues);
+                revOut.push_back(ss.str());
 
                 // Iterate backward through the block, update liveness
                 for (BasicBlock::reverse_iterator insn = block->rbegin(), IE = block->rend(); insn != IE; ++insn) {
 
                     // Add the instruction itself
-                    revOut.push_back(printValue(&*insn));
+                    revOut.push_back(std::string(50, ' ') + printValue(&*insn));
 
                     // Phi inst: Kill LHS, but don't output liveness here
                     if (PHINode* phiInst = dyn_cast<PHINode>(&*insn)) {
@@ -248,15 +254,16 @@ namespace {
                             liveValues.reset(it->second);
 
                         // Print live variables
-                        revOut.push_back("\nLive Set: " + printSet(domain, liveValues) + "\n");
+                        ss.clear();
+                        ss.str(std::string());
+                        ss << printSet(domain, liveValues);
+                        revOut.push_back(ss.str());
                     }
                 }
 
-                revOut.push_back("------------------------------------------------------\n");
-
                 // Since we added strings in the reverse order, print them in reverse
                 for (std::vector<std::string>::reverse_iterator it = revOut.rbegin(); it != revOut.rend(); ++it)
-                    outs() << *it << "\n";
+                        outs() << *it << "\n";
             }
             return false;
         }

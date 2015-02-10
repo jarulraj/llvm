@@ -41,7 +41,7 @@ namespace llvm {
         std::map<BasicBlock*, BlockResult> result;
         bool modified = false;
 
-        DBG(outs() << "APPLY ANALYSIS :: \n");
+        //DBG(outs() << "APPLY ANALYSIS :: \n");
 
         // Map domain values to index in bitvector
         std::map<void*, int> domainToIndex;
@@ -70,7 +70,7 @@ namespace llvm {
             break;
         }
 
-        DBG(outs() << "Boundary Blocks :" << boundaryBlocks.size() << "\n");
+        //DBG(outs() << "Boundary Blocks :" << boundaryBlocks.size() << "\n");
         //DBG(outs() << "Initialize Boundary Blocks \n");
 
         // Initialize Boundary Blocks
@@ -165,9 +165,8 @@ namespace llvm {
             break;
         }
 
-        DBG(outs() << "Traversal length : " << traversalOrder.size() << "\n");
-
-        DBG(outs() << "Start analysis \n");
+        //DBG(outs() << "Traversal length : " << traversalOrder.size() << "\n");
+        //DBG(outs() << "Start analysis \n");
 
         // Keep processing blocks until convergence
         bool converged = false;
