@@ -9,10 +9,65 @@
 
 #include "dataflow.h"
 #include "available-support.h"
+#include <sstream>
 
 using namespace llvm;
 
 namespace {
+
+	void printBitVector(BitVector b)
+	{
+		unsigned int i;
+		unsigned int b_size = b.size();
+
+		if(b_size == 0)
+			DBG(outs() << "-");
+		else
+		{
+			for(i = 0; i < b.size() ; i++)
+			{
+				if(b[i] == true)
+				  DBG(outs() << "1");
+				else
+				  DBG(outs() << "0");
+			}
+		}
+		DBG(outs() << "\n");
+	}
+
+	void printResult(DataFlowResult output)
+	{
+		for(auto entry : output.result)
+		{
+			DBG(outs() << "BB " << entry.first->getName() << "\n");
+
+			printBitVector(entry.second.in);
+			printBitVector(entry.second.out);
+		}
+	}
+
+	std::string printValue(Value* v)
+	{
+		std::string res; llvm::raw_string_ostream raw_st(res);
+		v->print(raw_st);
+		return res;
+	}
+
+	std::string printSet(std::vector<void*> domain, BitVector liveSet) {
+		std::stringstream ss;
+		ss << "{";
+		int ind = 0;
+		for (int i = 0; i < domain.size(); i++) {
+			// If variable i is live
+			if (liveSet[i]) {
+				if (ind > 0) ss << ",";
+				ss << " " << getShortValueName((Value*)domain[i]);
+				ind++;
+			}
+		}
+		ss << " }";
+		return ss.str();
+	}
 
   class Liveness : public FunctionPass {
   public:
@@ -103,8 +158,6 @@ namespace {
     LivenessAnalysis pass;
 
     virtual bool runOnFunction(Function &F) {
-      bool modified = false;
-
       // Print Information
       std::string function_name = F.getName();
       DBG(outs() << "FUNCTION :: " << function_name  << "\n");
@@ -143,41 +196,61 @@ namespace {
 
       // Apply pass
       output = pass.run(F, domain, boundaryCond, initCond);
+      //printResult(output);
 
-      printResult(output);
+		  // We use the results to compute the final liveness (we handle phi nodes here)
+		  for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI) {
+		  	BasicBlock* block = BI;
 
-      return modified;
-    }
+		    // liveness at OUT
+		    BitVector liveValues = output.result[block].out;
+				
+				// Generate Print Information in Reverse Order
+		    std::vector<std::string> revOut;
 
-    void printResult(DataFlowResult output)
-    {
-      for(auto entry : output.result)
-      {
-        DBG(outs() << "BB " << entry.first->getName() << "\n");
+        // Print live variables at the end of the block
+        revOut.push_back("------------------------------------------------------");
+        revOut.push_back("\nOUT Live Set: " + printSet(domain, liveValues) + "\n");
 
-        printBitVector(entry.second.in);
-        printBitVector(entry.second.out);
-      }
-    }
+		    // Iterate backward through the block, update liveness
+		    for (BasicBlock::reverse_iterator insn = block->rbegin(), IE = block->rend(); insn != IE; ++insn) {
 
-    void printBitVector(BitVector b)
-    {
-      unsigned int i;
-      unsigned int b_size = b.size();
+		      // Add the instruction itself
+		      revOut.push_back(printValue(&*insn));
 
-      if(b_size == 0)
-        DBG(outs() << "-");
-      else
-      {
-        for(i = 0; i < b.size() ; i++)
-        {
-          if(b[i] == true)
-            DBG(outs() << "1");
-          else
-            DBG(outs() << "0");
-        }
-      }
-      DBG(outs() << "\n");
+		      // Phi inst: Kill LHS, but don't output liveness here
+		      if (PHINode* phiInst = dyn_cast<PHINode>(&*insn)) {
+		        std::map<void*, int>::const_iterator it = output.domainToIndex.find((void*)phiInst);
+		        if (it != output.domainToIndex.end())
+		          liveValues.reset(it->second);
+		      }
+		      else {
+		        // Make values live when used as operands
+		        for (Instruction::op_iterator opnd = insn->op_begin(), opE = insn->op_end(); opnd != opE; ++opnd) {
+		          Value* val = *opnd;
+		          if (isa<Instruction>(val) || isa<Argument>(val)) {
+		            int ind = output.domainToIndex[(void*)val];
+		            liveValues.set(ind);
+		          }
+		        }
+
+		        // When a value is defined, remove it from live set before that instruction
+		        std::map<void*, int>::iterator it = output.domainToIndex.find((void*)(&*insn));
+		        if (it != output.domainToIndex.end())
+		          liveValues.reset(it->second);
+
+		        // Print live variables
+		        revOut.push_back("\nLive Set: " + printSet(domain, liveValues) + "\n");
+		      }
+		    }
+
+        revOut.push_back("------------------------------------------------------\n");
+		    
+		    // Since we added strings in the reverse order, print them in reverse
+		    for (std::vector<std::string>::reverse_iterator it = revOut.rbegin(); it != revOut.rend(); ++it)
+		      outs() << *it << "\n";
+		  }
+      return false;
     }
 
     virtual bool runOnModule(Module& M) {
