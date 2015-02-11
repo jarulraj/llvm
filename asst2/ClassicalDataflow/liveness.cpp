@@ -2,73 +2,11 @@
 // Group: jarulraj, nkshah
 ////////////////////// //////////////////////////////////////////////////////////
 
-#include "llvm/IR/Function.h"
-#include "llvm/Pass.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/InstIterator.h"
-
 #include "dataflow.h"
-#include "available-support.h"
-#include <sstream>
-#include <iomanip>
 
 using namespace llvm;
 
 namespace {
-
-    void printBitVector(BitVector b)
-    {
-        unsigned int i;
-        unsigned int b_size = b.size();
-
-        if(b_size == 0)
-            DBG(outs() << "-");
-        else
-        {
-            for(i = 0; i < b.size() ; i++)
-            {
-                if(b[i] == true)
-                    DBG(outs() << "1");
-                else
-                    DBG(outs() << "0");
-            }
-        }
-        DBG(outs() << "\n");
-    }
-
-    void printResult(DataFlowResult output)
-    {
-        for(auto entry : output.result)
-        {
-            DBG(outs() << "BB " << entry.first->getName() << "\n");
-
-            printBitVector(entry.second.in);
-            printBitVector(entry.second.out);
-        }
-    }
-
-    std::string printValue(Value* v)
-    {
-        std::string res; llvm::raw_string_ostream raw_st(res);
-        v->print(raw_st);
-        return res;
-    }
-
-    std::string printSet(std::vector<void*> domain, BitVector liveSet) {
-        std::stringstream ss;
-        ss << "{";
-        int ind = 0;
-        for (int i = 0; i < domain.size(); i++) {
-            // If variable i is live
-            if (liveSet[i]) {
-                if (ind > 0) ss << ",";
-                ss << " " << getShortValueName((Value*)domain[i]);
-                ind++;
-            }
-        }
-        ss << " }";
-        return ss.str();
-    }
 
     class Liveness : public FunctionPass {
     public:

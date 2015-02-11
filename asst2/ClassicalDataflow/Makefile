@@ -1,4 +1,4 @@
-all: liveness.so inputs
+all: liveness.so available.so inputs
 
 CXX = clang
 CXXFLAGS = $(shell llvm-config --cxxflags) -fcolor-diagnostics -g -O0
@@ -6,12 +6,10 @@ OPT = opt
 TEST = test-inputs
 
 dataflow.o: dataflow.cpp dataflow.h
+liveness.o: liveness.cpp 
+available.o: available.cpp
 
-liveness.o: liveness.cpp available-support.h
-
-available-support.o: available-support.cpp available-support.h	
-
-%.so: %.o dataflow.o available-support.o
+%.so: %.o dataflow.o 
 	$(CXX) -dylib -shared $^ -o $@
  
 # TESTING
