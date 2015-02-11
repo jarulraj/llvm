@@ -30,8 +30,8 @@
 using namespace std;
 
 // DEBUG mode
-//#undef DEBUG
-#define DEBUG 1
+#undef DEBUG
+//#define DEBUG 1
 
 #ifdef DEBUG
 #define DBG(a) a
