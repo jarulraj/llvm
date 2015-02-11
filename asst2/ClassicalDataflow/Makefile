@@ -31,7 +31,7 @@ pdf: $(patsubst %.cpp,%.pdf,$(wildcard ./*.cpp))  $(patsubst %.c,%.pdf,$(wildcar
 %.pdf: %.cpp 
 	enscript -q --color=1 -j -G -DDuplex:true -r -E -fCourier7 --tabsize=2 -p listing.ps $^
 	ps2pdf listing.ps $@
- 
+
 # CLEAN
 clean:
 	rm -f *.o *~ *.so *.pdf out $(TEST)/*.pdf                 
