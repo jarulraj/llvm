@@ -2,10 +2,38 @@
 
 \subsection{Data Flow Framework}
 
-We iterate over all functions in the module and for each function, we use helper functions in the
-LLVM \texttt{Function} class, such as \texttt{getName()}, to obtain the required info.
-We use the \texttt{size()} function in the \texttt{Instruction} class to compute the number of
-instructions in all the basic blocks in the function.
+We pass $6$ key parameters to the data flow framework. These include the domain
+which is represented as a vector of pointers, wherein each pointer refers to
+an element in the domain.
+Then, we pass the direction (forwards or backwards) and meet operator.
+We define an abstract \texttt{transfer function}, which needs to be overridden
+by each pass.\\
+
+\texttt{virtual TransferOutput transferFn(BitVector input,
+  std::vector<void*> domain,\\
+  std::map<void*, int> domainToIndex,
+  BasicBlock* block) = 0;
+}\\
+
+We only assume that this maps from an input bit vector to an output bit vector.
+Finally, we define the boundary conditions for either the entry or exit basic
+block, depending on the direction of the data flow analysis, and
+all the inner basic blocks in the CFG.\\
+
+\texttt{DataFlowResult DataFlow::run(Function \&F, std::vector<void*> domain,
+  BitVector boundaryCond, BitVector initCond)}\\
+
+Given a function \texttt{F}, we first identify the boundary block(s) and initialize them.
+Then, we initialize the inner blocks and compute the neighbour list for each
+basic block. Depending on the direction of the analysis, this is either the
+set of successors or predecessors of the block in the CFG. We then pick the traversal order,
+again based on the direction of the analysis.
+
+Finally, we start processing the basic blocks along the traversal order
+until we reach a fixed-point in our analysis.
+In each iteration, we first apply the meet operator and then use
+the transfer function. We return the \texttt{IN} and \texttt{OUT} sets for all basic blocks back to the
+pass. Given this information, the pass can interpret the information as needed.
 
 \subsection{Source Code Listing}
 
@@ -17,11 +45,26 @@ The listing starts from the next page.
 
 \subsection{Implementation}
 
-We wrote a per-basic block pass that performs the required transformations. For each block, we keep
-applying the 3 transformations within a \textbf{loop}, until the block is not modified after an entire iteration.
-This is to ensure that the benefits of each optimization are relayed onto other optimizations and we
-are not constrained by the order in which we apply the optimizations within a single iteration.
-The transformations are described below:
+In this analysis, we compute the liveness of variables at each program point.
+The domain is therefore the set of variables.
+This is a backwards pass and the meet operator is UNION.
+We initialize the exit block and all the interior blocks to $\phi$.
+In each iteration, for each basic block other than the exit block, we
+first compute the the \texttt{IN} and \texttt{OUT} sets thus :
+
+\begin{align*}
+\texttt{OUT}[\mathtt{B}] \; = \; \cup_{\mathtt{s} \in \texttt{successors}(\mathtt{B})} \texttt{IN}[\texttt{s}] \\
+\texttt{IN}[\mathtt{B}] \; = \; \texttt{use}_{B} \cup (\texttt{OUT}[\mathtt{B}] - \texttt{def}_{\texttt{B}})
+\end{align*}
+
+Here,
+$\texttt{def}_{B}$ is the set of variables that are defined in the block B, prior to any use of that
+variable in the block B. $\texttt{use}_{B}$ is the set of variables whose values are used in B prior to any
+definition of the variable in the block.
+We handle $\phi$ instructions differently. We only compute $\texttt{def}_{B}$ but don't display any
+information before these pseudo-instructions. While computing the sets during data flow analysis,
+we propagate the use information for phi instructions onto the predecessor blocks. After we converge,
+this pass shows the liveness of variables at each program point.
 
 \subsection{Source Code Listing}
 
@@ -38,18 +81,18 @@ The test cases start from the next page.
 \subsection{Expected Results}
 
 \begingroup
-    \fontsize{6pt}{8pt}\selectfont
+\fontsize{6pt}{8pt}\selectfont
 \begin{verbatim}
 //===--------------------------------------------------------------------------------------------------------------------------===//
                                                    { %argc }
-                                                              %cmp = icmp slt i32 %argc, 2
+                                                   % cmp = icmp slt i32 %argc, 2
                                              { %argc, %cmp }
                                                               br i1 %cmp, label %if.then, label %lor.lhs.false
                                                    { %argc }
 //===--------------------------------------------------------------------------------------------------------------------------===//
 //===--------------------------------------------------------------------------------------------------------------------------===//
                                                    { %argc }
-                                                              %cmp1 = icmp sle i32 undef, 0
+                                                   % cmp1 = icmp sle i32 undef, 0
                                             { %argc, %cmp1 }
                                                               br i1 %cmp1, label %if.then, label %if.end
                                                    { %argc }
@@ -61,74 +104,92 @@ The test cases start from the next page.
 //===--------------------------------------------------------------------------------------------------------------------------===//
 //===--------------------------------------------------------------------------------------------------------------------------===//
                                                    { %argc }
-                                                              %add = add nsw i32 %argc, 1
+                                                   % add = add nsw i32 %argc, 1
                                              { %argc, %add }
-                                                              %mul = mul nsw i32 %argc, 5
+                                             % mul = mul nsw i32 %argc, 5
                                              { %argc, %add }
-                                                              %div = sdiv i32 %add, 2
+                                             % div = sdiv i32 %add, 2
                                        { %argc, %add, %div }
-                                                              %cmp2 = icmp eq i32 %div, %argc
+                                       % cmp2 = icmp eq i32 %div, %argc
                                       { %argc, %add, %cmp2 }
                                                               br i1 %cmp2, label %if.then3, label %if.else
                                              { %argc, %add }
 //===--------------------------------------------------------------------------------------------------------------------------===//
 //===--------------------------------------------------------------------------------------------------------------------------===//
                                                    { %argc }
-                                                              %rem = srem i32 %argc, 3
+                                                   % rem = srem i32 %argc, 3
                                                    { %argc }
-                                                              %rem4 = srem i32 %argc, 3
+                                                   % rem4 = srem i32 %argc, 3
                                             { %argc, %rem4 }
-                                                              %rem5 = srem i32 %rem4, 3
+                                            % rem5 = srem i32 %rem4, 3
                                      { %argc, %rem4, %rem5 }
-                                                              %mul6 = mul nsw i32 %rem4, 2
+                                     % mul6 = mul nsw i32 %rem4, 2
                                      { %argc, %rem4, %rem5 }
-                                                              %div7 = sdiv i32 %rem5, 5
+                                     % div7 = sdiv i32 %rem5, 5
                                      { %argc, %rem4, %div7 }
                                                               br label %if.end10
                                      { %argc, %rem4, %div7 }
 //===--------------------------------------------------------------------------------------------------------------------------===//
 //===--------------------------------------------------------------------------------------------------------------------------===//
                                              { %argc, %add }
-                                                              %div8 = sdiv i32 %add, 5
+                                             % div8 = sdiv i32 %add, 5
                                                    { %argc }
-                                                              %rem9 = srem i32 %argc, 3
+                                                   % rem9 = srem i32 %argc, 3
                                             { %argc, %rem9 }
                                                               br label %if.end10
                                             { %argc, %rem9 }
 //===--------------------------------------------------------------------------------------------------------------------------===//
 //===--------------------------------------------------------------------------------------------------------------------------===//
-                                                              %n.0 = phi i32 [ %rem4, %if.then3 ], [ %argc, %if.else ]
-                                                              %m.0 = phi i32 [ %div7, %if.then3 ], [ %rem9, %if.else ]
+% n.0 = phi i32 [ %rem4, %if.then3 ], [ %argc, %if.else ]
+% m.0 = phi i32 [ %div7, %if.then3 ], [ %rem9, %if.else ]
                                        { %argc, %n.0, %m.0 }
-                                                              %mul11 = mul nsw i32 %n.0, 2
+                                       % mul11 = mul nsw i32 %n.0, 2
                                        { %argc, %n.0, %m.0 }
-                                                              %div12 = sdiv i32 %m.0, 5
+                                       % div12 = sdiv i32 %m.0, 5
                                        { %argc, %n.0, %m.0 }
-                                                              %rem13 = srem i32 %n.0, 3
+                                       % rem13 = srem i32 %n.0, 3
                                              { %argc, %m.0 }
-                                                              %mul14 = mul nsw i32 %m.0, 2
+                                             % mul14 = mul nsw i32 %m.0, 2
                                                    { %argc }
                                                               br label %return
                                                    { %argc }
 //===--------------------------------------------------------------------------------------------------------------------------===//
 //===--------------------------------------------------------------------------------------------------------------------------===//
-                                                              %retval.0 = phi i32 [ -1, %if.then ], [ %argc, %if.end10 ]
+% retval.0 = phi i32 [ -1, %if.then ], [ %argc, %if.end10 ]
                                                { %retval.0 }
                                                               ret i32 %retval.0
                                                          { }
 //===--------------------------------------------------------------------------------------------------------------------------===//
 \end{verbatim}
-    \endgroup
-  
+\endgroup
+
 \section{Available Expressions Analysis}
 
 \subsection{Implementation}
 
-We wrote a per-basic block pass that performs the required transformations. For each block, we keep
-applying the 3 transformations within a \textbf{loop}, until the block is not modified after an entire iteration.
-This is to ensure that the benefits of each optimization are relayed onto other optimizations and we
-are not constrained by the order in which we apply the optimizations within a single iteration.
-The transformations are described below:
+In this analysis, we compute the availability of expressions at each program point.
+The domain is therefore the set of expressions.
+This is a forwards pass and the meet operator is $\cap$.
+We initialize the entry block to $\phi$  and all the interior blocks to $\mathtt{U}$.
+In each iteration, for each basic block other than the entry block, we
+first compute the the \texttt{IN} and \texttt{OUT} sets thus :
+
+\begin{align*}
+%\texttt{IN}[\mathtt{B}] \; = \; \cap_{\mathtt{p} \in \texttt{predecessors}(\mathtt{B})} \texttt{OUT}[\texttt{p}] \\
+%\texttt{OUT}[\mathtt{B}] \; = \; \texttt{exp_gen}_{B} \cup (\texttt{IN}[\mathtt{B}] - \texttt{exp_kill}_{\texttt{B}})
+\end{align*}
+
+Here,
+$\texttt{exp_gen}_{B}$ is the set of expressions that are generated in the block B, i.e. it computes these
+expressions and does not subsequently redefine one of the operands in the expressions.
+$\texttt{exp_kill}_{B}$ is the set of expressions that are killed in the block B, i.e. it
+redefines one of the operands in the expressions and does not subsequently recompute that expression.
+
+The interesting thing is that because we are working on code in SSA form, the computed values are never
+destroyed. Thus, this analysis is very simple to reason about in this case.
+We handle $\phi$ instructions differently. We only compute $\texttt{exp_kill}_{B}$ but don't display any
+information before these pseudo-instructions.
+After we converge, this pass shows the availability of expressions at each program point.
 
 \subsection{Source Code Listing}
 
@@ -145,90 +206,11 @@ The test cases start from the next page.
 \subsection{Expected Results}
 
 \begingroup
-    \fontsize{6pt}{8pt}\selectfont
+\fontsize{6pt}{8pt}\selectfont
 \begin{verbatim}
-//===--------------------------------------------------------------------------------------------------------------------------===//
-                                                         { }
-                                                              %cmp = icmp slt i32 %argc, 2
-                                                         { }
-                                                              br i1 %cmp, label %if.then, label %lor.lhs.false
-                                                         { }
-//===--------------------------------------------------------------------------------------------------------------------------===//
-//===--------------------------------------------------------------------------------------------------------------------------===//
-                                                         { }
-                                                              %cmp1 = icmp sle i32 undef, 0
-                                                         { }
-                                                              br i1 %cmp1, label %if.then, label %if.end
-                                                         { }
-//===--------------------------------------------------------------------------------------------------------------------------===//
-//===--------------------------------------------------------------------------------------------------------------------------===//
-                                                         { }
-                                                              br label %return
-                                                         { }
-//===--------------------------------------------------------------------------------------------------------------------------===//
-//===--------------------------------------------------------------------------------------------------------------------------===//
-                                                         { }
-                                                              %add = add nsw i32 %argc, 1
-                                               { %argc + 1 }
-                                                              %mul = mul nsw i32 %argc, 5
-                                    { %argc + 1, %argc * 5 }
-                                                              %div = sdiv i32 %add, 2
-                          { %argc + 1, %argc * 5, %add / 2 }
-                                                              %cmp2 = icmp eq i32 %div, %argc
-                          { %argc + 1, %argc * 5, %add / 2 }
-                                                              br i1 %cmp2, label %if.then3, label %if.else
-                          { %argc + 1, %argc * 5, %add / 2 }
-//===--------------------------------------------------------------------------------------------------------------------------===//
-//===--------------------------------------------------------------------------------------------------------------------------===//
-                          { %argc + 1, %argc * 5, %add / 2 }
-                                                              %rem = srem i32 %argc, 3
-               { %argc + 1, %argc * 5, %add / 2, %argc % 3 }
-                                                              %rem4 = srem i32 %argc, 3
-               { %argc + 1, %argc * 5, %add / 2, %argc % 3 }
-                                                              %rem5 = srem i32 %rem4, 3
-    { %argc + 1, %argc * 5, %add / 2, %argc % 3, %rem4 % 3 }
-                                                              %mul6 = mul nsw i32 %rem4, 2
-{ %argc + 1, %argc * 5, %add / 2, %argc % 3, %rem4 % 3, %rem4 * 2 }
-                                                              %div7 = sdiv i32 %rem5, 5
-{ %argc + 1, %argc * 5, %add / 2, %argc % 3, %rem4 % 3, %rem4 * 2, %rem5 / 5 }
-                                                              br label %if.end10
-{ %argc + 1, %argc * 5, %add / 2, %argc % 3, %rem4 % 3, %rem4 * 2, %rem5 / 5 }
-//===--------------------------------------------------------------------------------------------------------------------------===//
-//===--------------------------------------------------------------------------------------------------------------------------===//
-                          { %argc + 1, %argc * 5, %add / 2 }
-                                                              %div8 = sdiv i32 %add, 5
-                { %argc + 1, %argc * 5, %add / 2, %add / 5 }
-                                                              %rem9 = srem i32 %argc, 3
-     { %argc + 1, %argc * 5, %add / 2, %argc % 3, %add / 5 }
-                                                              br label %if.end10
-     { %argc + 1, %argc * 5, %add / 2, %argc % 3, %add / 5 }
-//===--------------------------------------------------------------------------------------------------------------------------===//
-//===--------------------------------------------------------------------------------------------------------------------------===//
-               { %argc + 1, %argc * 5, %add / 2, %argc % 3 }
-                                                              %n.0 = phi i32 [ %rem4, %if.then3 ], [ %argc, %if.else ]
-               { %argc + 1, %argc * 5, %add / 2, %argc % 3 }
-                                                              %m.0 = phi i32 [ %div7, %if.then3 ], [ %rem9, %if.else ]
-               { %argc + 1, %argc * 5, %add / 2, %argc % 3 }
-                                                              %mul11 = mul nsw i32 %n.0, 2
-     { %argc + 1, %argc * 5, %add / 2, %argc % 3, %n.0 * 2 }
-                                                              %div12 = sdiv i32 %m.0, 5
-{ %argc + 1, %argc * 5, %add / 2, %argc % 3, %n.0 * 2, %m.0 / 5 }
-                                                              %rem13 = srem i32 %n.0, 3
-{ %argc + 1, %argc * 5, %add / 2, %argc % 3, %n.0 * 2, %m.0 / 5, %n.0 % 3 }
-                                                              %mul14 = mul nsw i32 %m.0, 2
-{ %argc + 1, %argc * 5, %add / 2, %argc % 3, %n.0 * 2, %m.0 / 5, %n.0 % 3, %m.0 * 2 }
-                                                              br label %return
-{ %argc + 1, %argc * 5, %add / 2, %argc % 3, %n.0 * 2, %m.0 / 5, %n.0 % 3, %m.0 * 2 }
-//===--------------------------------------------------------------------------------------------------------------------------===//
-//===--------------------------------------------------------------------------------------------------------------------------===//
-                                                         { }
-                                                              %retval.0 = phi i32 [ -1, %if.then ], [ %argc, %if.end10 ]
-                                                         { }
-                                                              ret i32 %retval.0
-                                                         { }
-//===--------------------------------------------------------------------------------------------------------------------------===//
+abc
 \end{verbatim}
-    \endgroup
+\endgroup
 
 %%% Local Variables:
 %%% mode: latex
