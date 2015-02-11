@@ -198,10 +198,11 @@ namespace {
                 // Generate Print Information
                 std::vector<std::string> out;
 
-                out.push_back("---------------------------");
+                out.push_back("//===--------------------------------------------------------------------------------------------------------------------------===//");
 
                 // Print live variables at the entry of the block
                 ss.clear();
+                ss << std::setw(WIDTH) << std::right;
                 ss.str(std::string());
                 ss << printSet(domain, availableExprs, 1);
                 out.push_back(ss.str());
@@ -210,7 +211,7 @@ namespace {
                 for (BasicBlock::iterator insn = block->begin(), IE = block->end(); insn != IE; ++insn) {
 
                     // Add the instruction itself
-                    out.push_back(std::string(80, ' ') + printValue(&*insn));
+                    out.push_back(std::string(WIDTH, ' ') + printValue(&*insn));
 
                     // Gen expressions
                     Instruction * I = insn;
@@ -282,9 +283,12 @@ namespace {
                     // Print live variables at this program point
                     ss.clear();
                     ss.str(std::string());
+                    ss << std::setw(WIDTH) << std::right;
                     ss << printSet(domain, availableExprs, 1);
                     out.push_back(ss.str());
                 }
+
+                out.push_back("//===--------------------------------------------------------------------------------------------------------------------------===//");
 
                 // Print strings
                 for (std::vector<std::string>::iterator it = out.begin(); it != out.end(); ++it)

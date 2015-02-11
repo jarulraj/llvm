@@ -30,13 +30,16 @@
 using namespace std;
 
 // DEBUG mode
-#define DEBUG 1
+#undef DEBUG
+//#define DEBUG 1
 
 #ifdef DEBUG
 #define DBG(a) a
 #else
 #define DBG(a)
 #endif
+
+#define WIDTH 60
 
 namespace llvm {
 

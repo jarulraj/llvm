@@ -160,11 +160,12 @@ namespace {
                 // Generate Print Information in Reverse Order
                 std::vector<std::string> revOut;
 
-                revOut.push_back("---------------------------");
+                revOut.push_back("//===--------------------------------------------------------------------------------------------------------------------------===//");
 
                 // Print live variables at the end of the block
                 ss.clear();
                 ss.str(std::string());
+                ss << std::setw(WIDTH) << std::right;
                 ss << printSet(domain, liveValues, 0);
                 revOut.push_back(ss.str());
 
@@ -172,7 +173,7 @@ namespace {
                 for (BasicBlock::reverse_iterator insn = block->rbegin(), IE = block->rend(); insn != IE; ++insn) {
 
                     // Add the instruction itself
-                    revOut.push_back(std::string(50, ' ') + printValue(&*insn));
+                    revOut.push_back(std::string(WIDTH, ' ') + printValue(&*insn));
 
                     // Phi inst: Kill LHS, but don't output liveness here
                     if (PHINode* phiInst = dyn_cast<PHINode>(&*insn)) {
@@ -198,10 +199,13 @@ namespace {
                         // Print live variables
                         ss.clear();
                         ss.str(std::string());
+                        ss << std::setw(WIDTH) << std::right;
                         ss << printSet(domain, liveValues, 0);
                         revOut.push_back(ss.str());
                     }
                 }
+
+                revOut.push_back("//===--------------------------------------------------------------------------------------------------------------------------===//");
 
                 // Since we added strings in the reverse order, print them in reverse
                 for (std::vector<std::string>::reverse_iterator it = revOut.rbegin(); it != revOut.rend(); ++it)
