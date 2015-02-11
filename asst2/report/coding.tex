@@ -2,10 +2,11 @@
 
 \subsection{Data Flow Framework}
 
-We pass $6$ key parameters to the data flow framework. These include the domain
+We pass $4$ key parameters to the data flow framework. These include the domain
 which is represented as a vector of pointers, wherein each pointer refers to
 an element in the domain.
-Then, we pass the direction (forwards or backwards) and meet operator.
+We configure the direction (forwards or backwards) and meet operator in the pass
+constructor.
 We define an abstract \texttt{transfer function}, which needs to be overridden
 by each pass.\\
 
@@ -35,11 +36,11 @@ In each iteration, we first apply the meet operator and then use
 the transfer function. We return the \texttt{IN} and \texttt{OUT} sets for all basic blocks back to the
 pass. Given this information, the pass can interpret the information as needed.
 
-\subsection{Source Code Listing}
+%\subsection{Source Code Listing}
 
-The listing starts from the next page.
+%The listing starts from the next page.
 
-\includepdf[pages=-]{../ClassicalDataflow/dataflow.pdf}
+%\includepdf[pages=-]{../ClassicalDataflow/dataflow.pdf}
 
 \section{Liveness Analysis}
 
@@ -66,11 +67,11 @@ information before these pseudo-instructions. While computing the sets during da
 we propagate the use information for phi instructions onto the predecessor blocks. After we converge,
 this pass shows the liveness of variables at each program point.
 
-\subsection{Source Code Listing}
+%\subsection{Source Code Listing}
 
-The listing starts from the next page.
+%The listing starts from the next page.
 
-\includepdf[pages=-]{../ClassicalDataflow/liveness.pdf}
+%\includepdf[pages=-]{../ClassicalDataflow/liveness.pdf}
 
 \subsection{Test Cases}
 
@@ -191,11 +192,11 @@ We handle $\phi$ instructions differently. We only compute $\texttt{exp\_kill}_{
 information before these pseudo-instructions.
 After we converge, this pass shows the availability of expressions at each program point.
 
-\subsection{Source Code Listing}
+%\subsection{Source Code Listing}
 
-The listing starts from the next page.
+%The listing starts from the next page.
 
-\includepdf[pages=-]{../ClassicalDataflow/available.pdf}
+%\includepdf[pages=-]{../ClassicalDataflow/available.pdf}
 
 \subsection{Test Cases}
 
