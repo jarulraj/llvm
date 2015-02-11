@@ -97,6 +97,7 @@ namespace {
                                 {
                                     //DBG(outs() << "Index : " << (*iter).second  << "\n");
                                     KillSet.set((*iter).second);
+                                    GenSet.reset((*iter).second);
                                 }
                             }
                         }
