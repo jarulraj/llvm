@@ -175,19 +175,19 @@ In each iteration, for each basic block other than the entry block, we
 first compute the the \texttt{IN} and \texttt{OUT} sets thus :
 
 \begin{align*}
-%\texttt{IN}[\mathtt{B}] \; = \; \cap_{\mathtt{p} \in \texttt{predecessors}(\mathtt{B})} \texttt{OUT}[\texttt{p}] \\
-%\texttt{OUT}[\mathtt{B}] \; = \; \texttt{exp_gen}_{B} \cup (\texttt{IN}[\mathtt{B}] - \texttt{exp_kill}_{\texttt{B}})
+\texttt{IN}[\mathtt{B}] \; = \; \cap_{\mathtt{p} \in \texttt{predecessors}(\mathtt{B})} \texttt{OUT}[\texttt{p}] \\
+\texttt{OUT}[\mathtt{B}] \; = \; \texttt{exp\_gen}_{B} \cup (\texttt{IN}[\mathtt{B}] - \texttt{exp\_kill}_{\texttt{B}})
 \end{align*}
 
-Here,
-$\texttt{exp_gen}_{B}$ is the set of expressions that are generated in the block B, i.e. it computes these
+%Here,
+$\texttt{exp\_gen}_{B}$ is the set of expressions that are generated in the block B, i.e. it computes these
 expressions and does not subsequently redefine one of the operands in the expressions.
-$\texttt{exp_kill}_{B}$ is the set of expressions that are killed in the block B, i.e. it
+$\texttt{exp\_kill}_{B}$ is the set of expressions that are killed in the block B, i.e. it
 redefines one of the operands in the expressions and does not subsequently recompute that expression.
 
 The interesting thing is that because we are working on code in SSA form, the computed values are never
-destroyed. Thus, this analysis is very simple to reason about in this case.
-We handle $\phi$ instructions differently. We only compute $\texttt{exp_kill}_{B}$ but don't display any
+destroyed. Thus, this analysis is simple to reason about.
+We handle $\phi$ instructions differently. We only compute $\texttt{exp\_kill}_{B}$ but don't display any
 information before these pseudo-instructions.
 After we converge, this pass shows the availability of expressions at each program point.
 
