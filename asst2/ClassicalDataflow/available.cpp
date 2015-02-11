@@ -204,7 +204,7 @@ namespace {
                 ss.clear();
                 ss << std::setw(WIDTH) << std::right;
                 ss.str(std::string());
-                ss << printSet(domain, availableExprs, 1);
+                ss << printSet(domain, availableExprs, 1) << " :: BB Entry" ;
                 out.push_back(ss.str());
 
                 // Iterate forward through the block, updating availability of expressions
@@ -281,11 +281,16 @@ namespace {
                     //printBitVector(availableExprs);
 
                     // Print live variables at this program point
-                    ss.clear();
-                    ss.str(std::string());
-                    ss << std::setw(WIDTH) << std::right;
-                    ss << printSet(domain, availableExprs, 1);
-                    out.push_back(ss.str());
+                    PHINode* phiInst = dyn_cast<PHINode>(&*insn);
+                    // Skip printing for phi instructions
+                    if(phiInst == NULL)
+                    {
+                        ss.clear();
+                        ss.str(std::string());
+                        ss << std::setw(WIDTH) << std::right;
+                        ss << printSet(domain, availableExprs, 1);
+                        out.push_back(ss.str());
+                    }
                 }
 
                 out.push_back("//===--------------------------------------------------------------------------------------------------------------------------===//");
