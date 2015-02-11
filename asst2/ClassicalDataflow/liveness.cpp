@@ -35,7 +35,7 @@ namespace {
             LivenessAnalysis(Direction direction, MeetOp meet_op) : DataFlow(direction, meet_op) { }
 
         protected:
-            TransferOutput transferFn(BitVector input, std::map<void*, int> domainToIndex, BasicBlock* block)
+            TransferOutput transferFn(BitVector input,  std::vector<void*> domain, std::map<void*, int> domainToIndex, BasicBlock* block)
             {
 
                 TransferOutput transferOutput;
@@ -117,6 +117,7 @@ namespace {
 
             for(inst_iterator II = inst_begin(F), IE = inst_end(F); II!=IE; ++II) {
                 Instruction& insn(*II);
+
                 // Look for insn-defined values and function args
                 for (User::op_iterator OI = insn.op_begin(), OE = insn.op_end(); OI != OE; ++OI)
                 {
@@ -140,13 +141,16 @@ namespace {
             // For LVA, both are empty sets
             BitVector boundaryCond(domain.size(), false);
             BitVector initCond(domain.size(), false);
-            std::stringstream ss;
 
             // Apply pass
             output = pass.run(F, domain, boundaryCond, initCond);
             //printResult(output);
 
+            // PRINTING RESULTS
+
             // We use the results to compute the final liveness (we handle phi nodes here)
+            std::stringstream ss;
+
             for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI) {
                 BasicBlock* block = BI;
 
@@ -161,7 +165,7 @@ namespace {
                 // Print live variables at the end of the block
                 ss.clear();
                 ss.str(std::string());
-                ss << printSet(domain, liveValues);
+                ss << printSet(domain, liveValues, 0);
                 revOut.push_back(ss.str());
 
                 // Iterate backward through the block, update liveness
@@ -194,7 +198,7 @@ namespace {
                         // Print live variables
                         ss.clear();
                         ss.str(std::string());
-                        ss << printSet(domain, liveValues);
+                        ss << printSet(domain, liveValues, 0);
                         revOut.push_back(ss.str());
                     }
                 }
@@ -203,6 +207,8 @@ namespace {
                 for (std::vector<std::string>::reverse_iterator it = revOut.rbegin(); it != revOut.rend(); ++it)
                         outs() << *it << "\n";
             }
+
+            // No modification
             return false;
         }
 

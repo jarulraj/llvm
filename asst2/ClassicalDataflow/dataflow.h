@@ -102,7 +102,9 @@ namespace llvm {
         /*      Transfer Function: To be implmented by the specific analysis.
                 Takes one set (IN/OUT), domain to index mapping, basic block, and outputs the other set (OUT/IN) */
         virtual TransferOutput transferFn(BitVector input,
-                                          std::map<void*, int> domainToIndex, BasicBlock* block) = 0;
+                                          std::vector<void*> domain,
+                                          std::map<void*, int> domainToIndex,
+                                          BasicBlock* block) = 0;
 
     private:
 
@@ -119,7 +121,7 @@ namespace llvm {
 
     std::string printValue(Value* v);
 
-    std::string printSet(std::vector<void*> domain, BitVector liveSet);
+    std::string printSet(std::vector<void*> domain, BitVector on, int mode);
 
     // EXPRESSION-RELATED UTILS
 

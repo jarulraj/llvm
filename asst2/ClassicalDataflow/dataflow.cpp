@@ -204,7 +204,7 @@ namespace llvm {
                     *blockInput = applyMeetOp(meetInputs);
 
                 //Apply transfer function to input set in order to get output set for this iteration
-                blockRes.transferOutput = transferFn(*blockInput, domainToIndex, *BB);
+                blockRes.transferOutput = transferFn(*blockInput, domain, domainToIndex, *BB);
                 // TODO: Memoize GEN, KILL (and other stuff) to avoid recomputations
                 BitVector* blockOutput = (direction == Direction::FORWARD) ? &blockRes.out : &blockRes.in;
                 *blockOutput = blockRes.transferOutput.element;
@@ -408,19 +408,42 @@ namespace llvm {
 
     std::string getShortValueName(Value * v);
 
-    std::string printSet(std::vector<void*> domain, BitVector liveSet) {
+    std::string printSet(std::vector<void*> domain, BitVector on, int  mode) {
         std::stringstream ss;
         ss << "{";
         int ind = 0;
+
         for (int i = 0; i < domain.size(); i++) {
-            // If variable i is live
-            if (liveSet[i]) {
-                if (ind > 0) ss << ",";
-                ss << " " << getShortValueName((Value*)domain[i]);
+            // If element i is on
+            if (on[i]) {
+                if (ind > 0)
+                    ss << ",";
+
+                switch(mode)
+                {
+                case 0:
+                    // Value*
+                    ss << " " << getShortValueName((Value*)domain[i]);
+                    break;
+
+                case 1:
+                    // Expression*
+                    ss << " " << ((Expression*)domain[i])->toString();
+                    break;
+
+
+                default:
+                    errs() << "Invalid mode :: " << mode << "\n";
+                    break;
+                }
+
+
                 ind++;
             }
         }
+
         ss << " }";
+
         return ss.str();
     }
 
