@@ -5,23 +5,21 @@
 \item{
     \textbf{Loop-invariant instructions}\\
 
-    These are the loop-invariant instructions : $\{ S_{2}, S_{3}, S_{5}, S_{6}, S_{8}, S_{9}, S_{11}, S_{12} \}$.
-    This is because the values of these computations  don't change as long as the control stays within
-    the  loop.
+    The loop-invariant instructions are the following: $\{ S_{2}, S_{3}, S_{5}, S_{6}, S_{8}, S_{9}, S_{11}, S_{12} \}$.
+    This is because the values of these computations  do not change as long as the control stays within the  loop.
 
-    These instructions are not loop-invariant : $\{ S_{1}, S_{4}, S_{7}, S_{10} \}$. They have multiple
-    reaching definitions.
+    %These instructions are not loop-invariant : $\{ S_{1}, S_{4}, S_{7}, S_{10} \}$. They have multiple reaching definitions.
   }
 
   \item{
     \textbf{Loop-invariant instructions that can be moved to the pre-header}\\
 
-    These instructions can be moved to the pre-header : $\{ S_{3}, S_{12} \}$.
+    Only two instructions can be moved to the pre-header : $\{ S_{3}, S_{12} \}$. Both instructions satisfy all the three conditions required to be moved to the pre-header. In particular, $S_3$ can be moved because, while $q$ is live at the loop exit, $S_3$ dominates the loop exit. In contrast, $S_{12}$ does not dominate the loop exit, but $r$ is also not live at the loop exit. Further, when we move the two instructions to the pre-header, we must preserve their order: $S_{12}$ must be placed after $S_3$.
 
-    The other instructions don't satisfy atleast one of these rules. Either they don't have only one definition in
-    the loop. Or, the block in which they are present does not dominate all the loop exits in which the LHS
-    of the instruction is live.
-    Or, they are live out of the pre-header.
+    The other instructions do not satisfy at least one of the three required conditions. For example, $S_5$, $S_6$, $S_9$, and $S_{11}$ cannot be moved because the variables defined by these instructions are live at the loop exit, and these instructions do not dominate the loop exit. $S_2$ and $S_8$ cannot be moved because the variables they define ($y$ and $g$, respectively) have other definitions inside the loop. %because Either they don't have only one definition in
+%    the loop. Or, the block in which they are present does not dominate all the loop exits in which the LHS
+%    of the instruction is live.
+%    Or, they are live out of the pre-header.
     
   }
 
