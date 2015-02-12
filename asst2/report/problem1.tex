@@ -1,32 +1,9 @@
 \section{Lazy Code Motion}
+  
+The CFGs are shown below. The first and second passes place operations
+at the anticipation frontier to get most of the redundancy.
+The later two passes move the cut set out to reduce register pressure and
+do perform some cleanup to remove temporary assignments.
 
-\begin{itemize}
- 
-\item The CFG for part 1 is shown in Figure~\ref{fig:cfg1}.
-  
-\begin{figure}
-\centering
-\includegraphics[width=0.7\textwidth]{images/CFG.jpg}
-\caption{CFG for part 1.}
-\label{fig:cfg1}
-\end{figure}
- 
-\item The CFG for part 2 is shown in Figure~\ref{fig:cfg2}.
-  
-\begin{figure}
-\centering
-\includegraphics[width=0.7\textwidth]{images/CFG.jpg}
-\caption{CFG for part 2.}
-\label{fig:cfg2}
-\end{figure}
- 
-\item The CFG for part 3 is shown in Figure~\ref{fig:cfg3}.
-  
-\begin{figure}
-\centering
-\includegraphics[width=0.7\textwidth]{images/CFG.jpg}
-\caption{CFG for part 3.}
-\label{fig:cfg3}
-\end{figure}
+\includepdf[scale=0.75, pages={-}]{images/Q3.pdf}
 
-\end{itemize}

@@ -1,1 +1,28 @@
 \section{LICM: Loop Invariant Code Motion}
+
+\begin{itemize}
+
+\item{
+    \textbf{Loop-invariant instructions}\\
+
+    These are the loop-invariant instructions : $\{ S_{2}, S_{3}, S_{5}, S_{6}, S_{8}, S_{9}, S_{11}, S_{12} \}$.
+    This is because the values of these computations  don't change as long as the control stays within
+    the  loop.
+
+    These instructions are not loop-invariant : $\{ S_{1}, S_{4}, S_{7}, S_{10} \}$. They have multiple
+    reaching definitions.
+  }
+
+  \item{
+    \textbf{Loop-invariant instructions that can be moved to the pre-header}\\
+
+    These instructions can be moved to the pre-header : $\{ S_{3}, S_{12} \}$.
+
+    The other instructions don't satisfy atleast one of these rules. Either they don't have only one definition in
+    the loop. Or, the block in which they are present does not dominate all the loop exits in which the LHS
+    of the instruction is live.
+    Or, they are live out of the pre-header.
+    
+  }
+
+\end{itemize}
