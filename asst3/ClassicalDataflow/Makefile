@@ -1,4 +1,4 @@
-all: liveness.so available.so inputs pdf
+all: liveness.so available.so dominance.so licm.so inputs pdf
 
 CXX = clang
 CXXFLAGS = $(shell llvm-config --cxxflags) -fcolor-diagnostics -g -O0
@@ -8,18 +8,26 @@ TEST = test-inputs
 dataflow.o: dataflow.cpp dataflow.h
 liveness.o: liveness.cpp 
 available.o: available.cpp
+dominance.o: dominance.cpp 
+licm.o: licm.cpp 
+
+licm.so: licm.o dominance.o dataflow.o
+	$(CXX) -dylib -shared $^ -o $@
 
 %.so: %.o dataflow.o 
 	$(CXX) -dylib -shared $^ -o $@
  
 # TESTING
-inputs : $(patsubst %.c,%.bc,$(wildcard $(TEST)/*.c)) 
+inputs : $(patsubst %.c,%.bc,$(wildcard $(TEST)/*.c)) $(patsubst %.c,%.ll,$(wildcard $(TEST)/*.c))
  
 %.tmp: %.c
 	$(CXX) -O0 -emit-llvm -c $^ -o $@ 
 
 %.bc: %.tmp
 	$(OPT) -mem2reg $^ -o $@
+	
+%.ll: %.bc
+	llvm-dis $^
  
 # PDF
 pdf: $(patsubst %.cpp,%.pdf,$(wildcard ./*.cpp))  $(patsubst %.c,%.pdf,$(wildcard $(TEST)/*.c))   
