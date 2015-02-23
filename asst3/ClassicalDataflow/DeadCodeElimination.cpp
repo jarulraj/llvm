@@ -4,6 +4,8 @@
 
 #include "dataflow.h"
 
+#include "llvm/IR/IntrinsicInst.h"
+
 using namespace llvm;
 
 namespace {
@@ -144,12 +146,11 @@ namespace {
             // For LVA, both are empty sets
             BitVector boundaryCond(domain.size(), false);
             BitVector initCond(domain.size(), false);
+            bool modified = false;
 
             // Apply pass
             output = pass.run(F, domain, boundaryCond, initCond);
             //printResult(output);
-
-            // PRINTING RESULTS
 
             // We use the results to compute the final liveness (we handle phi nodes here)
             std::stringstream ss;
@@ -157,13 +158,26 @@ namespace {
             for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI) {
                 BasicBlock* block = BI;
 
+                outs() << "----------------\n";
+                for(auto entry : output.domainToIndex)
+                    outs() << printValue((Value *) entry.first) << " " << entry.second << "\n";
+                outs() << "----------------\n";
+
                 // liveness at OUT
                 BitVector liveValues = output.result[block].out;
+
+                outs() << liveValues.size() << "\n";
+                outs() << output.domainToIndex.size() << "\n";
+
+                // DCE tracking
+                BitVector prevLiveValues;
+                std::vector<Instruction *> deleteSet;
 
                 // Generate Print Information in Reverse Order
                 std::vector<std::string> revOut;
 
                 revOut.push_back("//===--------------------------------------------------------------------------------------------------------------------------===//");
+
 
                 // Print live variables at the end of the block
                 ss.clear();
@@ -174,6 +188,9 @@ namespace {
 
                 // Iterate backward through the block, update liveness
                 for (BasicBlock::reverse_iterator insn = block->rbegin(), IE = block->rend(); insn != IE; ++insn) {
+
+                    // Copy liveValues
+                    prevLiveValues = liveValues;
 
                     // Add the instruction itself
                     revOut.push_back(std::string(WIDTH, ' ') + printValue(&*insn));
@@ -199,6 +216,20 @@ namespace {
                         if (it != output.domainToIndex.end())
                             liveValues.reset(it->second);
 
+                        /////////////////////////////////////////////////////
+                        // DCE Logic
+                        /////////////////////////////////////////////////////
+
+                        // Figure out which insn is on LHS
+                        // And check if it was alive at the program point immediately following it
+                        int insn_ind = output.domainToIndex[(void*) &*insn];
+                        outs() << "Live : " <<  prevLiveValues[insn_ind] << " Insn :: " << insn_ind << " " << printValue(&*insn) << "\n";
+
+                        // Remove insn if it is dead
+                        if(prevLiveValues[insn_ind] == false){
+                            deleteSet.push_back(&*insn);
+                        }
+
                         // Print live variables
                         ss.clear();
                         ss.str(std::string());
@@ -208,6 +239,22 @@ namespace {
                     }
                 }
 
+                // DCE delete instructions
+                for (auto I : deleteSet) {
+
+                    // Check if insn is live due to any of these reasons
+                    if(isa<TerminatorInst>(I) ||  isa<DbgInfoIntrinsic>(I) ||
+                       isa<LandingPadInst>(I) ||  I->mayHaveSideEffects())
+                        continue;
+
+                    if(std::find(deleteSet.begin(), deleteSet.end(), I) != deleteSet.end())  {
+                        outs() << "Deleting instruction :: " << printValue(I) << "\n";
+                        I->eraseFromParent();
+                    }
+
+                }
+
+
                 revOut.push_back("//===--------------------------------------------------------------------------------------------------------------------------===//");
 
                 // Since we added strings in the reverse order, print them in reverse
@@ -215,8 +262,8 @@ namespace {
                     outs() << *it << "\n";
             }
 
-            // No modification
-            return false;
+            // Potential modification
+            return modified;
         }
 
         virtual bool runOnModule(Module& M) {

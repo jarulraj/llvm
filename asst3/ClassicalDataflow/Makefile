@@ -9,10 +9,10 @@ OPT = opt
 TEST = tests
 
 LoopInvariantCodeMotion.so: LoopInvariantCodeMotion.o dominance.o dataflow.o
-	$(CXX) -dylib -shared $^ -o $@
+	$(CXX) -shared $^ -o $@
 
 %.so: %.o dataflow.o
-	$(CXX) -dylib -shared $^ -o $@
+	$(CXX) -shared $^ -o $@
 
 # TESTING
 inputs : $(patsubst %.c,%.bc,$(wildcard $(TEST)/*.c)) $(patsubst %.c,%.ll,$(wildcard $(TEST)/*.c))
