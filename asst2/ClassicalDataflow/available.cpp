@@ -311,8 +311,11 @@ namespace {
 
             // Run analysis on each function
             for (Module::iterator MI = M.begin(), ME = M.end(); MI != ME; ++MI) {
-                if(!modified)
-                    modified = runOnFunction(*MI);
+                bool function_modified = false;
+
+                function_modified = runOnFunction(*MI);
+
+                modified |= function_modified;
             }
 
             return modified;

@@ -1,17 +1,13 @@
-all: liveness.so available.so dominance.so LoopInvariantCodeMotion.so inputs 
+all: dominance.so \
+	LoopInvariantCodeMotion.so \
+	DeadCodeElimination.so \
+	inputs 
 
 CXX = clang
 CXXFLAGS = $(shell llvm-config --cxxflags) -fcolor-diagnostics -g -O0
 OPT = opt
 TEST = tests
 
-dataflow.o: dataflow.cpp dataflow.h
-liveness.o: liveness.cpp
-available.o: available.cpp
-dominance.o: dominance.cpp
-LoopInvariantCodeMotion.o: LoopInvariantCodeMotion.cpp
-dce.o: dce.cpp
-	
 LoopInvariantCodeMotion.so: LoopInvariantCodeMotion.o dominance.o dataflow.o
 	$(CXX) -dylib -shared $^ -o $@
 

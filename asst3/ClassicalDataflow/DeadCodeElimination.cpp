@@ -1,4 +1,4 @@
-// 15-745 S15 Assignment 2: liveness.cpp
+// 15-745 S15 Assignment 3: DeadCodeElimination.cpp
 // Group: jarulraj, nkshah
 ////////////////////// //////////////////////////////////////////////////////////
 
@@ -8,17 +8,17 @@ using namespace llvm;
 
 namespace {
 
-    class Liveness : public FunctionPass {
+    class DCE : public FunctionPass {
     public:
         static char ID;
 
-        Liveness() : FunctionPass(ID) {
+        DCE() : FunctionPass(ID) {
 
             // Setup the pass
             Direction direction = Direction::BACKWARD;
             MeetOp meet_op = MeetOp::UNION;
 
-            pass = LivenessAnalysis(direction, meet_op);
+            pass = DCEAnalysis(direction, meet_op);
         }
 
         virtual void getAnalysisUsage(AnalysisUsage& AU) const {
@@ -27,12 +27,12 @@ namespace {
 
     private:
 
-        // Liveness Analysis class
-        class LivenessAnalysis : public DataFlow {
+        // DCE Analysis class
+        class DCEAnalysis : public DataFlow {
         public:
 
-            LivenessAnalysis() : DataFlow(Direction::INVALID_DIRECTION, MeetOp::INVALID_MEETOP) {	}
-            LivenessAnalysis(Direction direction, MeetOp meet_op) : DataFlow(direction, meet_op) { }
+            DCEAnalysis() : DataFlow(Direction::INVALID_DIRECTION, MeetOp::INVALID_MEETOP) {	}
+            DCEAnalysis(Direction direction, MeetOp meet_op) : DataFlow(direction, meet_op) { }
 
         protected:
             TransferOutput transferFn(BitVector input,  std::vector<void*> domain, std::map<void*, int> domainToIndex, BasicBlock* block)
@@ -44,6 +44,7 @@ namespace {
                 int domainSize = domainToIndex.size();
                 BitVector defSet(domainSize);
                 BitVector useSet(domainSize);
+
                 for (BasicBlock::iterator insn = block->begin(); insn != block->end(); ++insn) {
                     // Locally exposed uses
 
@@ -102,7 +103,7 @@ namespace {
         };
 
         // The pass
-        LivenessAnalysis pass;
+        DCEAnalysis pass;
 
         virtual bool runOnFunction(Function &F) {
             // Print Information
@@ -123,10 +124,12 @@ namespace {
                 {
                     Value *val = *OI;
                     if (isa<Instruction>(val) || isa<Argument>(val)) {
+
                         // Val is used by insn
                         if(std::find(domain.begin(),domain.end(),val) == domain.end())
                             domain.push_back((void*)val);
                     }
+
                 }
             }
 
@@ -221,8 +224,11 @@ namespace {
 
             // Run analysis on each function
             for (Module::iterator MI = M.begin(), ME = M.end(); MI != ME; ++MI) {
-                if(!modified)
-                    modified = runOnFunction(*MI);
+                bool function_modified = false;
+
+                function_modified = runOnFunction(*MI);
+
+                modified |= function_modified;
             }
 
             return modified;
@@ -230,7 +236,6 @@ namespace {
 
     };
 
-    char Liveness::ID = 0;
-    RegisterPass<Liveness> X("liveness", "15745 Liveness");
-
+    char DCE::ID = 0;
+    RegisterPass<DCE> X("dead-code-elimination", "15745 Dead Code Elimination");
 }
