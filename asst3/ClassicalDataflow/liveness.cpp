@@ -209,7 +209,7 @@ namespace {
 
                 // Since we added strings in the reverse order, print them in reverse
                 for (std::vector<std::string>::reverse_iterator it = revOut.rbegin(); it != revOut.rend(); ++it)
-                        outs() << *it << "\n";
+                    outs() << *it << "\n";
             }
 
             // No modification
