@@ -108,6 +108,16 @@ namespace {
         DCEAnalysis pass;
 
         virtual bool runOnFunction(Function &F) {
+            bool modified = false;
+
+            do{
+                modified = applyDCEOnFunction(F);
+            } while(modified);
+
+            return modified;
+        }
+
+        bool applyDCEOnFunction(Function &F) {
             // Print Information
             std::string function_name = F.getName();
             DBG(outs() << "FUNCTION :: " << function_name  << "\n");
@@ -158,16 +168,8 @@ namespace {
             for (Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI) {
                 BasicBlock* block = BI;
 
-                outs() << "----------------\n";
-                for(auto entry : output.domainToIndex)
-                    outs() << printValue((Value *) entry.first) << " " << entry.second << "\n";
-                outs() << "----------------\n";
-
                 // liveness at OUT
                 BitVector liveValues = output.result[block].out;
-
-                outs() << liveValues.size() << "\n";
-                outs() << output.domainToIndex.size() << "\n";
 
                 // DCE tracking
                 BitVector prevLiveValues;
@@ -189,8 +191,22 @@ namespace {
                 // Iterate backward through the block, update liveness
                 for (BasicBlock::reverse_iterator insn = block->rbegin(), IE = block->rend(); insn != IE; ++insn) {
 
+                    /////////////////////////////////////////////////////
+                    // DCE Logic
+                    /////////////////////////////////////////////////////
+
                     // Copy liveValues
                     prevLiveValues = liveValues;
+
+                    // Figure out which insn is on LHS
+                    // And check if it was alive at the program point immediately following it
+                    int insn_ind = output.domainToIndex[(void*) &*insn];
+                    outs() << "Live : " <<  prevLiveValues[insn_ind] << " Insn :: " << insn_ind << " " << printValue(&*insn) << "\n";
+
+                    // Remove insn if it is dead
+                    if(prevLiveValues[insn_ind] == false){
+                        deleteSet.push_back(&*insn);
+                    }
 
                     // Add the instruction itself
                     revOut.push_back(std::string(WIDTH, ' ') + printValue(&*insn));
@@ -216,20 +232,6 @@ namespace {
                         if (it != output.domainToIndex.end())
                             liveValues.reset(it->second);
 
-                        /////////////////////////////////////////////////////
-                        // DCE Logic
-                        /////////////////////////////////////////////////////
-
-                        // Figure out which insn is on LHS
-                        // And check if it was alive at the program point immediately following it
-                        int insn_ind = output.domainToIndex[(void*) &*insn];
-                        outs() << "Live : " <<  prevLiveValues[insn_ind] << " Insn :: " << insn_ind << " " << printValue(&*insn) << "\n";
-
-                        // Remove insn if it is dead
-                        if(prevLiveValues[insn_ind] == false){
-                            deleteSet.push_back(&*insn);
-                        }
-
                         // Print live variables
                         ss.clear();
                         ss.str(std::string());
@@ -240,18 +242,22 @@ namespace {
                 }
 
                 // DCE delete instructions
-                for (auto I : deleteSet) {
 
+                for (auto I : deleteSet) {
                     // Check if insn is live due to any of these reasons
                     if(isa<TerminatorInst>(I) ||  isa<DbgInfoIntrinsic>(I) ||
                        isa<LandingPadInst>(I) ||  I->mayHaveSideEffects())
                         continue;
 
+                    // Check if use_empty
+                    if(!I->use_empty())
+                        continue;
+
                     if(std::find(deleteSet.begin(), deleteSet.end(), I) != deleteSet.end())  {
                         outs() << "Deleting instruction :: " << printValue(I) << "\n";
                         I->eraseFromParent();
+                        modified = true;
                     }
-
                 }
 
 
@@ -263,21 +269,6 @@ namespace {
             }
 
             // Potential modification
-            return modified;
-        }
-
-        virtual bool runOnModule(Module& M) {
-            bool modified = false;
-
-            // Run analysis on each function
-            for (Module::iterator MI = M.begin(), ME = M.end(); MI != ME; ++MI) {
-                bool function_modified = false;
-
-                function_modified = runOnFunction(*MI);
-
-                modified |= function_modified;
-            }
-
             return modified;
         }
 
