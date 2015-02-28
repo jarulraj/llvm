@@ -26,13 +26,38 @@ public:
 
     LICM() : LoopPass(ID) {}
 
-		virtual void getAnalysisUsage(AnalysisUsage& AU) const {
-			AU.setPreservesAll();
-		}
-    
+	virtual void getAnalysisUsage(AnalysisUsage& AU) const {
+		AU.addRequired<LoopInfo>();
+	}
+		
     virtual bool runOnLoop(Loop *L, LPPassManager &no_use) {
-			printIdom(computeIdom(computeDom(L)),L);
-			return false;
+		// 
+		bool modified = false;
+
+		// From the LLVM documentation, we know that LoopPass calls runOnLoop on the loops in the loop nest order, so the outermost loop is processed last. 
+		// So we don't need to take care of LICM "bubbling" all the way through.
+		
+		// Ignore loops without a pre-header
+		if (L->getLoopPreheader() == NULL)
+		  return false;
+
+		// Else, get the loop info
+		LoopInfo& LI = getAnalysis<LoopInfo>();
+		
+		printIdom(computeIdom(computeDom(L)),L);
+
+		set<Value*> loopInvariantStatements = computeLoopInvariantStatements(L, reachingDefs);
+
+		set<Value*> codeMotionCandidateStatements = computeCodeMotionCandidateStatements(L, dominanceResults, loopInvariantStatements);
+
+		bool loopModified = applyMotionToCandidates(L, codeMotionCandidateStatements);
+
+		modified |= loopModified;
+
+		LQ.pop_back();
+		}
+
+		return modified;
     }
 };
 
