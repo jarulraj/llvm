@@ -103,5 +103,49 @@ namespace llvm {
         }
         return;
     }
+    
+    DomTree* getDominanceTree(std::map<BasicBlock*, BasicBlock*> idom, Loop* L) {
+    	DomTree* tree = new DomTree();
+ 		std::vector<BasicBlock*> blocks = L->getBlocks();
+ 		std::map<BasicBlock*,DomTreeNode*> lookup;
+ 		for(std::vector<BasicBlock*>::iterator BI = blocks.begin(), BE = blocks.end(); BI != BE; ++BI) {
+ 			BasicBlock* b = *BI;
+ 			BasicBlock* p;
+ 			if (BI==blocks.begin())	{ // Header
+ 				p = NULL;
+ 			}
+ 			else {
+ 				p = idom[b];
+ 			}
+ 			
+ 			// Create a node for this if it doesn't exist already.
+ 			DomTreeNode* n;
+ 			if (lookup.find(b) != lookup.end()) {
+ 				n = lookup[b];
+ 			}
+ 			else {
+ 				n = new DomTreeNode(b,NULL);
+	 			lookup[b] = n;
+ 			}
+
+ 			// Same for the parent
+ 			DomTreeNode* pn;
+ 			if (lookup.find(p) != lookup.end()) {
+ 				pn = lookup[p];
+ 			}
+ 			else {
+ 				pn = new DomTreeNode(p,NULL);
+	 			lookup[p] = pn;
+ 			}
+
+			n->parent = pn;				// Add parent to this node
+			pn->children.push_back(n);	// Add this node to the children of the parent
+ 			tree->nodes.push_back(n);
+ 			
+ 		}
+ 		
+ 		tree->root = lookup[L->getBlocks().front()];
+ 		return tree;
+    }
 
 }
