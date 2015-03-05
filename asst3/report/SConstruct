@@ -24,7 +24,7 @@ env.PrependENVPath('PATH', [
 	'/s/texlive-2010/bin',
 	])
 
-pdf = env.PDF('asst2.tex')[0]
+pdf = env.PDF('asst3.tex')[0]
 Default(pdf)
 
 ps = env.Command('asst1.ps', pdf, 'pdftops $SOURCE $TARGET')
