@@ -90,8 +90,10 @@ namespace llvm {
         BlockResult intRes = BlockResult();
         // Forward analysis => Initialize IN, Backward analysis => OUT
         BitVector* intVal = (direction == Direction::FORWARD) ? &intRes.out : &intRes.in;
+        BitVector* intOtherVal = (direction == Direction::FORWARD) ? &intRes.in : &intRes.out;
 
         *intVal = initCond;
+        *intOtherVal = initCond;
         intRes.transferOutput.element = initCond;
         for (Function::iterator BB = F.begin(), BE = F.end(); BB != BE; ++BB) {
             if (std::find(boundaryBlocks.begin(),boundaryBlocks.end(),(BasicBlock*)BB) == boundaryBlocks.end()) {
