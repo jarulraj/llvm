@@ -109,6 +109,7 @@ public:
 		// Conditions for hoisting out of the loop
 		// In SSA, everything is assigned only once, and must be done before all its uses. So only need to check if all loop exits are dominated.
 		
+		/* No more checking of dominating all loop exits
 		// Find all loop exits
 		std::vector<BasicBlock*> exitblocks;
 		std::vector<BasicBlock*> blocks = L->getBlocks();
@@ -121,20 +122,23 @@ public:
 				}
 			}			
 		}
+		*/
 		
 		// Check if instruction can be moved, and do code motion in the order in which invStmts were added (while maintaining dependencies)
 		for (int j = 0; j < invStmts.size(); ++j) {
 			Instruction* inst = invStmts[j];
 			BasicBlock* b = inst->getParent();
 			
-			// Check if it dominates all loop exits
 			bool all_dominate = true;
+			/* No more checking of dominating all loop exits
+			// Check if it dominates all loop exits
 			for(int i=0; i<exitblocks.size(); ++i) {
 				if (!dominates(b,exitblocks[i],dominanceResult)) {
 					all_dominate = false;
 					break;
 				}
 			}
+			*/
 			
 			if (all_dominate) {
 				Instruction* end = &(preheader->back());
