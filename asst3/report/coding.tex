@@ -26,7 +26,7 @@ We use the following check to determine if an LLVM Instruction pointer I is inva
 
 A pure expression is loop invariant if its value does not change throughout the loop. 
 
-The first check is required because the speculative instruction may not satisfy the required loop precondition across all loop iterations.
+The first check is required because the speculative instruction may not always satisfy the required loop precondition.
 
 The second check is required because the contents of the memory may change across loop iterations.
 
@@ -35,6 +35,19 @@ The second check is required because the contents of the memory may change acros
 For each loop, we first compute the domination tree, then detect the set of loop invariant instructions in a single pass by traversing the tree in the DFS order. We then perform code motion. As prescribed, we do not check if the instruction is in a block that dominates all loop exits. Further, our traversal of the tree in the DFS order (and moving the code in that order) preserves dependencies among the code moved. 
 
 \subsection{Microbenchmarks}
+
+We evaluate performance of the programs by measuring how many LLVM instructions are dynamically executed when it runs.
+We use \texttt{lli}, the LLVM interpreter thus :\\
+
+Default LLVM bitcode dynamic instruction count (after being transformed by mem2reg) :\\
+
+\texttt{lli -stats -force-interpreter tests/licm\_test\_1.bc}\\
+
+Transformed LLVM bitcode dynamic instruction count (after applying LICM pass) :\\
+
+\texttt{opt -load ./LoopInvariantCodeMotion.so -loop-invariant-code-motion -loop-simplify -licm tests/licm\_test\_1.bc -o out}\\
+
+\texttt{lli -stats -force-interpreter out}\\
 
 \begin{table}[!ht]
 \centering
@@ -51,6 +64,11 @@ For each loop, we first compute the domination tree, then detect the set of loop
   bitcode's dynamic instruction count.}
 \end{table}  
 
+All the three test cases contain loops and are meant to allow LICM.
+The first and the third test case contain sub-loops, while the second test case contains only 1 loop.
+We have multiple basic blocks contained within the loop in both the first and third test cases.
+While the first contains three loops, the third case only contains two loops.
+They are all useful for testing LICM and dominator analysis.
 
 \section{Dead Code Elimination}
 
@@ -78,11 +96,28 @@ Now, during our data flow analysis, once we compute $OUT(B)$ for a basic block $
 
 We use the following check to determine if an LLVM Instruction pointer I is live.
 
-\texttt{isa<TerminatorInst>() || isa<DbgInfoIntrinsic>(I) || \\  isa<LandingPadInst>(I) || I->mayHaveSideEffects()} or if I is used by any Instruction that is also live. 
+\texttt{isa<TerminatorInst>() || isa<DbgInfoIntrinsic>(I) ||}
 
-We finally erase all the instructions that are faint.
+\texttt{isa<LandingPadInst>(I) || I->mayHaveSideEffects()}
+
+or if I is used by any Instruction that is also live.\\
+
+We finally erase all the instructions from each basic block that are dead.
 
 \subsection{Microbenchmarks}
+
+We evaluate performance of the programs by measuring how many LLVM instructions are dynamically executed when it runs.
+We use \texttt{lli}, the LLVM interpreter thus :\\
+
+Default LLVM bitcode dynamic instruction count (after being transformed by mem2reg) :\\
+
+\texttt{lli -stats -force-interpreter tests/dce\_test\_1.bc}\\
+
+Transformed LLVM bitcode dynamic instruction count (after applying DCE pass) :\\
+
+\texttt{opt -load ./DeadCodeElimination.so -dead-code-elimination  tests/dce\_test\_1.bc -o out}\\
+
+\texttt{lli -stats -force-interpreter out}\\
 
 \begin{table}[!ht]
 \centering
@@ -99,6 +134,12 @@ We finally erase all the instructions that are faint.
 \caption{Comparison between default bitcode's dynamic instruction count and transformed
   bitcode's dynamic instruction count.}
 \end{table}  
+
+All the four test cases are supposed to test DCE.
+The first and second tests are simple test cases that are meant to just evaluate DCE
+on regular programs.
+Some instructions are dead and can be safely removed.
+The third and fourth test cases are sanity checks to make sure that DCE works.
 
 \newpage
 
