@@ -25,9 +25,9 @@ The second check is required because the contents of the memory may change acros
 
 \subsection{LICM Implementation}
 
-For each loop, we first detect the set of loop invariant instructions and the dominator information.
-We then perform code motion. That is, we move the candidate instruction to the loop's preheader if a
-all the invariant operations it depends on have also been moved.
+For each loop, we first detect the set of loop invariant instructions and compute
+the dominator information. We then perform code motion. That is, we move the candidate instruction
+to the loop's preheader if all the invariant operations it depends on have also been moved.
 
 \subsection{Microbenchmarks}
 
