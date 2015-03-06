@@ -1,4 +1,4 @@
-int test () {
+int main () {
 	int j;
 	int x;
 	int y;

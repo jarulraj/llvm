@@ -216,6 +216,8 @@ namespace {
 
                 // do actual deletion
                 for(auto I : deleteSet){
+                    if(!I->use_empty())
+                        continue;
                     DBG(outs() << "Deleting instruction :: " << printValue(I) << "\n");
                     I->eraseFromParent();
                 }

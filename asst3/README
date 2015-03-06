@@ -1,7 +1,14 @@
-+ Source code is available in the respective folders.
-After running "make", the passes can be applied on any test input.
++ Source code is available in the "ClassicalDataFlow" folder. After running "make", 
+the passes can be applied on any test input.
 
-+ The test files are in "test-inputs" sub-directories within "ClassicalDataFlow"
-directory.
++ The test files are in "tests" sub-directories within "ClassicalDataFlow" directory.
+
++ Sample usage of passes :
+
+As "-licm" collides with existing LLVM pass, we instead use "-loop-invariant-code-motion"
+As "-dce" collides with existing LLVM pass, we instead use "-dead-code-elimination"
+
+opt -load ./LoopInvariantCodeMotion.so -loop-invariant-code-motion -loop-simplify -licm tests/licm_test_3.bc -o out
+opt -load ./DeadCodeElimination.so -dead-code-elimination  tests/dce_test_2.bc -o out; llvm-dis out; vi out.ll
 
 + A copy of the report is present in this directory.
