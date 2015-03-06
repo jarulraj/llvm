@@ -10,39 +10,45 @@
   LD  : 3 cycles \\
   ST  : 1 cycle \\
 
-  Processor : 2 instructions/cycle
-  Functional Unit : 1 instruction/cycle
+  Processor : 2 instructions/cycle \\
+  Functional Unit : 1 instruction/cycle \\
 
 \item \textbf{Instructions}
 
+  The list of instructions to be scheduled along with their dependencies.
+  
 \begin{table}[!ht]
 \centering
-\begin{tabular}{c|l|l}
+\begin{tabular}{c|l|l|l}
   \toprule
   \toprule
-  \textbf{Id} & \textbf{Instruction} & \textbf{Depends} \\
+  \textbf{Id} & \textbf{Instruction} & \textbf{Cycles} & \textbf{Depends} \\
   \midrule
-  I-1   &  LD a           &          \\ \hline
-  I-2   &  LD b           &          \\ \hline
-  I-3   &  ADD c, a, b    & I-1, I-2 \\ \hline
-  I-4   &  LD d           &          \\ \hline
-  I-5   &  SUB e, b, a    & I-1, I-2 \\ \hline
-  I-6   &  DIV f, a, d    & I-1, I-4 \\ \hline
-  I-7   &  ST e           & I-5      \\ \hline
-  I-8   &  LD g           &          \\ \hline
-  I-9   &  MUL h, e, b    & I-2, I-5 \\ \hline
-  I-10  &  MUL i, d, d    & I-4      \\ \hline
-  I-11  &  ADD j, g, i    & I-8, I-10 \\ \hline
-  I-12  &  ST c           & I-3      \\ \hline
-  I-13  &  ST h           & I-9      \\ \hline
-  I-14  &  ST j           & I-11     \\ \hline
-  I-15  &  ST f           & I-6      \\ \hline
+  I-1   &  LD a         & 1  &          \\ \hline
+  I-2   &  LD b         & 1  &          \\ \hline
+  I-3   &  ADD c, a, b  & 1  & I-1, I-2 \\ \hline
+  I-4   &  LD d         & 1  &          \\ \hline
+  I-5   &  SUB e, b, a  & 1  & I-1, I-2 \\ \hline
+  I-6   &  DIV f, a, d  & 7  & I-1, I-4 \\ \hline
+  I-7   &  ST e         & 1  & I-5      \\ \hline
+  I-8   &  LD g         & 1  &          \\ \hline
+  I-9   &  MUL h, e, b  & 4  & I-2, I-5 \\ \hline
+  I-10  &  MUL i, d, d  & 4  & I-4      \\ \hline
+  I-11  &  ADD j, g, i  & 1  & I-8, I-10 \\ \hline
+  I-12  &  ST c         & 1  & I-3      \\ \hline
+  I-13  &  ST h         & 1  & I-9      \\ \hline
+  I-14  &  ST j         & 1  & I-11     \\ \hline
+  I-15  &  ST f         & 1  & I-6      \\ \hline
   \bottomrule
 \end{tabular}
 \end{table}  
   
 \item \textbf{Forward list scheduling}
 
+  In this case, the edges in the data precedence graph are in forward direction.
+  We break ties by selecting the instruction that appeared first in the regular
+  program order.
+  
 \begin{table}[!ht]
 \centering
 \begin{tabular}{c|l|l|l|l}
@@ -50,24 +56,55 @@
   \toprule
   \textbf{Cycle} & \textbf{ALU-1} & \textbf{ALU-2} & \textbf{MEM} & \textbf{READY} \\
   \midrule
-  0  &      &      &  I-1  &       \\ \hline
-  1  &      &      &  I-4  &       \\ \hline
-  2  &      &      &  I-2  &       \\ \hline
-  3  &      &      &  I-8  &       \\ \hline
-  4  & I-6  &      &       &       \\ \hline
-  5  & I-5  & I-10 &       &       \\ \hline
-  6  & I-3  & I-9  &       &       \\ \hline
-  7  &      &      &  I-7  &       \\ \hline
-  8  &      &      &  I-12 &       \\ \hline
-  9  & I-11 &      &       &       \\ \hline
-  10 &      &      &  I-13 &       \\ \hline
-  11 &      &      &  I-14 &       \\ \hline
-  12 &      &      &  I-15 &       \\ \hline
+  0  &      &      &  I-4  & I-4, I-1, I-2, I-8 \\ \hline
+  1  &      &      &  I-1  & I-1, I-2, I-8      \\ \hline
+  2  &      &      &  I-2  & I-2, I-8           \\ \hline
+  3  &      & I-10 &  I-8  & I-8, I-10          \\ \hline
+  4  & I-6  &      &       & I-6                \\ \hline
+  5  & I-5  & I-3  &       & I-5, I-3           \\ \hline
+  6  & I-9  &      &  I-7  & I-9, I-7, I-12     \\ \hline
+  7  & I-11 &      &  I-12 & I-11, I-12         \\ \hline
+  8  &      &      &  I-14 & I-14               \\ \hline
+  9  &      &      &       &                    \\ \hline
+  10 &      &      &  I-13 & I-13               \\ \hline
+  11 &      &      &  I-15 & I-15               \\ \hline
   \bottomrule
 \end{tabular}
+\caption{Forward list scheduling algorithm's output.}
 \end{table}
 
 \item \textbf{Backward list scheduling}
+
+  In this case, the edges in the data precedence graph are in backward direction.
+  We break ties by selecting the instruction that appeared first in the regular
+  program order. We schedule the finish times of each operation and are constrained
+  by FU availability.
+
+  We observe that while it takes 12 cycles in the previous case, it only takes 11
+  cycles while using this scheduling algorithm.
+  
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|l|l|l|l}
+  \toprule
+  \toprule
+  \textbf{Cycle} & \textbf{ALU-1} & \textbf{ALU-2} & \textbf{MEM} & \textbf{READY} \\
+  \midrule
+  0  &      &      &  I-4  &                               \\ \hline
+  1  &      &      &  I-2  &                               \\ \hline
+  2  &      &      &  I-1  & I-4                           \\ \hline
+  3  & I-6  & I-10 &       & I-2                           \\ \hline
+  4  & I-5  &      &  I-8  & I-5, I-1, I-8                 \\ \hline
+  5  & I-9  & I-3  &       & I-3, I-8                      \\ \hline
+  6  &      &      &  I-12 & I-10, I-12, I-8               \\ \hline
+  7  &      & I-11 &  I-7  & I-11, I-7, I-12               \\ \hline
+  8  &      &      &  I-14 & I-9, I-14, I-7, I-12          \\ \hline
+  9  &      &      &  I-13 & I-6, I-13, I-14, I-7, I-12    \\ \hline
+  10 &      &      &  I-15 & I-15, I-13, I-14, I-7, I-12   \\ \hline
+  \bottomrule
+\end{tabular}
+\caption{Backward list scheduling algorithm's output.}
+\end{table}
 
 \end{itemize}
 
