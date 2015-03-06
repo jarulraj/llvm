@@ -1,9 +1,9 @@
-\section{Lazy Code Motion}
-  
-The CFGs are shown below. The first and second passes place operations
-at the anticipation frontier to get most of the redundancy.
-The later two passes move the cut set out to reduce register pressure and
-do perform some cleanup to remove temporary assignments.
+\section{Register Allocation}
 
-\includepdf[scale=0.75, pages={-}]{images/Q3.pdf}
+The CFGs are shown below. 
+We first identify the live ranges of all the variables and
+construct the interference graph. We then provide
+a 4-coloring of this graph. Thus, it is possible to allocate
+the variables in this procedure to 4 physical registers.
 
+\includepdf[scale=0.75, pages={-}]{images/Q2.pdf}

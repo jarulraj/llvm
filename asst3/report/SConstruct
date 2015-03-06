@@ -27,7 +27,7 @@ env.PrependENVPath('PATH', [
 pdf = env.PDF('asst3.tex')[0]
 Default(pdf)
 
-ps = env.Command('asst1.ps', pdf, 'pdftops $SOURCE $TARGET')
+ps = env.Command('asst3.ps', pdf, 'pdftops $SOURCE $TARGET')
 
 Depends(pdf, [
 	 Glob('section/*.tex'),
