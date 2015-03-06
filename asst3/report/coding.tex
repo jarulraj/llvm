@@ -2,17 +2,66 @@
 
 \subsection{Dominance Information}
 
+We use the following data flow equations to compute dominance information using the
+data flow framework. \\
+
+$\operatorname{Dom}(n_o) = \left \{ n_o \right \}$
+
+$\operatorname{Dom}(n) = \left ( \bigcap_{p \in \text{preds}(n)}^{} \operatorname{Dom}(p) \right ) \bigcup^{} \left \{ n \right \}$,
+where $n_o$ is the start node.
+
 \subsection{Finding Invariant Instructions}
+
+We use the following check to determine if an LLVM Instruction pointer I is invariant :\\
+
+\texttt{isSafeToSpeculativelyExecute(I) \&\& !I->mayReadFromMemory() \&\& !isa<LandingPadInst>(I)}\\
+
+This is because TODO
 
 \subsection{LICM Implementation}
 
+TODO
+
 \subsection{Microbenchmarks}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|l|l}
+  \toprule
+  \textbf{Benchmark} & \textbf{Instruction Count} & \textbf{Transformed Instruction Count} \\
+  \midrule
+  licm-test-1 & 100 & 50 \\ 
+  licm-test-2 & 100 & 50 \\
+  licm-test-3 & 100 & 50 \\ 
+  \bottomrule
+\end{tabular}
+\caption{Comparison between default bitcode's dynamic instruction count and transformed
+  bitcode's dynamic instruction count.}
+\end{table}  
+
 
 \section{Dead Code Elimination}
 
 \subsection{DCE Implementation}
 
 \subsection{Microbenchmarks}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{c|l|l}
+  \toprule
+  \textbf{Benchmark} & \textbf{Instruction Count} & \textbf{Transformed Instruction Count} \\
+  \midrule
+  dce-test-1 & 100 & 50 \\ 
+  dce-test-2 & 100 & 50 \\
+  dce-test-3 & 100 & 50 \\ 
+  \bottomrule
+\end{tabular}
+\caption{Comparison between default bitcode's dynamic instruction count and transformed
+  bitcode's dynamic instruction count.}
+\end{table}  
+
+\newpage
 
 %%% Local Variables:
 %%% mode: latex
