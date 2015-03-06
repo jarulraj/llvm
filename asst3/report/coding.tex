@@ -10,6 +10,14 @@ $\operatorname{Dom}(n_o) = \left \{ n_o \right \}$
 $\operatorname{Dom}(n) = \left ( \bigcap_{p \in \text{preds}(n)}^{} \operatorname{Dom}(p) \right ) \bigcup^{} \left \{ n \right \}$,
 where $n_o$ is the start node.
 
+This is implemented in the ``DominanceAnalysis'' class. Function ``computeDom'' takes a loop as an argument, and runs DominanceAnalaysis for the basic blocks of the function containing the loop. Function ``dominates'' is a helper function that checks if node X dominates node Y. Function ``computeIdom'' computes immediate dominator relationship by using
+
+$$
+X \text{ idom } Y \text{ iff } X \text{ dom } Y \land \left(\not\exists Z \text { s.t. } X \text{ dom } Z\ \land\ Z \text{ dom } Y\right).
+$$
+
+Finally, class ``DomTree'' is used to construct a tree using the immediate dominator relationship. Traversing this tree in DFS order is helpful in finding invariant instructions in a single pass.
+
 \subsection{Finding Invariant Instructions}
 
 We use the following check to determine if an LLVM Instruction pointer I is invariant :
@@ -18,16 +26,13 @@ We use the following check to determine if an LLVM Instruction pointer I is inva
 
 A pure expression is loop invariant if its value does not change throughout the loop. 
 
-The first check is required becase the speculative instruction may not satisfy the required
-loop precondition across all loop iterations.
+The first check is required because the speculative instruction may not satisfy the required loop precondition across all loop iterations.
 
 The second check is required because the contents of the memory may change across loop iterations.
 
 \subsection{LICM Implementation}
 
-For each loop, we first detect the set of loop invariant instructions and compute
-the dominator information. We then perform code motion. That is, we move the candidate instruction
-to the loop's preheader if all the invariant operations it depends on have also been moved.
+For each loop, we first compute the domination tree, then detect the set of loop invariant instructions in a single pass by traversing the tree in the DFS order. We then perform code motion. As prescribed, we do not check if the instruction is in a block that dominates all loop exits. Further, our traversal of the tree in the DFS order (and moving the code in that order) preserves dependencies among the code moved. 
 
 \subsection{Microbenchmarks}
 
