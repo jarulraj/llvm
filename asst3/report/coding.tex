@@ -12,15 +12,22 @@ where $n_o$ is the start node.
 
 \subsection{Finding Invariant Instructions}
 
-We use the following check to determine if an LLVM Instruction pointer I is invariant :\\
+We use the following check to determine if an LLVM Instruction pointer I is invariant :
 
-\texttt{isSafeToSpeculativelyExecute(I) \&\& !I->mayReadFromMemory() \&\& !isa<LandingPadInst>(I)}\\
+\texttt{isSafeToSpeculativelyExecute(I) \&\& !I->mayReadFromMemory() \&\& !isa<LandingPadInst>(I)}
 
-This is because TODO
+A pure expression is loop invariant if its value does not change throughout the loop. 
+
+The first check is required becase the speculative instruction may not satisfy the required
+loop precondition across all loop iterations.
+
+The second check is required because the contents of the memory may change across loop iterations.
 
 \subsection{LICM Implementation}
 
-TODO
+For each loop, we first detect the set of loop invariant instructions and the dominator information.
+We then perform code motion. That is, we move the candidate instruction to the loop's preheader if a
+all the invariant operations it depends on have also been moved.
 
 \subsection{Microbenchmarks}
 
