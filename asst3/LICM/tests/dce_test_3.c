@@ -1,5 +1,5 @@
 
-int func(int x) {
+int main(int x, char* argv[]) {
     int y, z;
 
     y = z * 2;

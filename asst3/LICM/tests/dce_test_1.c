@@ -1,5 +1,5 @@
 
-int func(){
+int main(){
     int r1, r2, r3;
 
     r1 = 1;

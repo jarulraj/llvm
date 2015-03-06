@@ -7,7 +7,7 @@ int foo(int a, int b){
 }
 
 
-int func(){
+int main(){
     int r1, r2, r3;
     int x, y, z;
 

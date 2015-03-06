@@ -30,9 +30,9 @@ TODO
   \toprule
   \textbf{Benchmark} & \textbf{Instruction Count} & \textbf{Transformed Instruction Count} \\
   \midrule
-  licm-test-1 & 100 & 50 \\ 
-  licm-test-2 & 100 & 50 \\
-  licm-test-3 & 100 & 50 \\ 
+  licm-test-1 & 9887 & 9857 \\ 
+  licm-test-2 & 797  & 405 \\
+  licm-test-3 & 9406 & 9306 \\ 
   \bottomrule
 \end{tabular}
 \caption{Comparison between default bitcode's dynamic instruction count and transformed
@@ -44,6 +44,32 @@ TODO
 
 \subsection{DCE Implementation}
 
+To identify the set of faint instructions, we first identify the complementary set of \textbf{strongly live instructions}.
+A strongly live instruction is a instruction that is either live by definition or is used in the assignment of another
+strongly live instruction.
+If a instruction is not strongly live, then it is a \textbf{faint instruction}.
+That is, we can remove that instruction.
+
+For any instruction $s$, let $x$ be variable in the LHS. Let $GEN_s$ be the set of variables in the RHS (like the live variable analysis) and
+let $KILL_s = \{x\}$. We use the following transfer function, where we \textbf{alter data flow only if $x$ is strongly live}. That is :
+
+\[
+IN(s) = \left\{ 
+\begin{array}{ll}
+GEN_s \cup (OUT(s)-KILL_s) & \mbox{if } x \in OUT(s),\\
+OUT(s) & \mbox{if } x \notin OUT(s).
+\end{array}
+\right.
+\]
+
+Now, during our data flow analysis, once we compute $OUT(B)$ for a basic block $B$, we iterate through the instructions of $B$ in the reverse order, and apply the transfer function given above. When we reach the first instruction of the block, its $IN$ will give us $IN(B)$. It seems that unlike the transfer function of live variable analysis, this transfer function is not composable (i.e., after composing over multiple instructions in the block, its final form is not of the same type $f(x) = GEN_x \cup (x-KILL_x)$) because the instructions on which we alter the data flow depends on $OUT(B)$ itself.\\  
+
+We use the following check to determine if an LLVM Instruction pointer I is live.
+
+\texttt{isa<TerminatorInst>() || isa<DbgInfoIntrinsic>(I) || \\  isa<LandingPadInst>(I) || I->mayHaveSideEffects()} or if I is used by any Instruction that is also live. 
+
+We finally erase all the instructions that are faint.
+
 \subsection{Microbenchmarks}
 
 \begin{table}[!ht]
@@ -52,9 +78,10 @@ TODO
   \toprule
   \textbf{Benchmark} & \textbf{Instruction Count} & \textbf{Transformed Instruction Count} \\
   \midrule
-  dce-test-1 & 100 & 50 \\ 
-  dce-test-2 & 100 & 50 \\
-  dce-test-3 & 100 & 50 \\ 
+  dce-test-1 & 7  & 6  \\ 
+  dce-test-2 & 20 & 16 \\
+  dce-test-3 & 4  & 2  \\
+  dce-test-4 & 2  & 1  \\
   \bottomrule
 \end{tabular}
 \caption{Comparison between default bitcode's dynamic instruction count and transformed

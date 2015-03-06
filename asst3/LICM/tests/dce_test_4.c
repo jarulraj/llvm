@@ -1,5 +1,5 @@
 
-int func() {
+int main() {
     int w, x, y, z;
 
     w = 30;
