@@ -30,4 +30,11 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>project/proposal/sample.bib</name>
+			<type>1</type>
+			<location>/usr/share/texlive/texmf-dist/bibtex/bib/gloss/sample.bib</location>
+		</link>
+	</linkedResources>
 </projectDescription>

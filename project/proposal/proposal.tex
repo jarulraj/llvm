@@ -4,7 +4,7 @@
 \usepackage{bm}
 \usepackage{amsmath}
 \usepackage{graphicx}
-\usepackage[colorlinks=true,urlcolor=magenta]{hyperref}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
 \usepackage{geometry}
 \geometry{margin=1in}
 \usepackage{multicol}
@@ -46,9 +46,49 @@
 
 \begin{itemize}
 
-\item \textbf{Project Web Page :} 
+\item \textbf{Project Web Page :} \url{https://www.cs.cmu.edu/~akalia/15-745/}
 
-\item \textbf{Description :} abc.\\
+\item \textbf{Description :} 
+
+Traditionally, when an application requests a set of different rows 
+on the same memory bank, the memory access latency is increased due
+to DRAM row-buffer conflicts.
+This limitation is handled by interleaving consecutively 
+addressed data locations to consecutive memory banks, so that
+the requests are spread across different banks.
+Software systems, therefore, strive hard to layout their data structures 
+to benefit from sequential access patterns. 
+For instance, DBMSs targeting analytical workloads use a columnar data 
+layout so that the consecutive fields in the same tabular column are stored in
+consecutively addressed data locations.
+
+However, if DRAM were to support both row and columnar access patterns
+efficiently, then the design complexity of software systems can be significantly 
+reduced. Instead, the compiler can automatically transform the software access
+patterns to leverage these novel DRAM access primitives. 
+We propose to implement these compiler transformations based
+on a cost-model and evaluate the potential benefits of these DRAM access
+primitives for a simple matrix library. Initially, we plan to rely on 
+programmer annotations to identify these access patterns.
+
+It will also be interesting to look at how this transformation interacts with
+other compiler optimizations. For instance, we can now potentially perform
+SIMD optimizations on columnar access patterns, that is not feasible with
+traditional DRAM access primitives.
+
+\textbf{Goals :}
+
+(a) (\textbf{75\% goal}) How can the compiler transform software access patterns
+to leverage these novel DRAM access primitives ?
+
+(b) (\textbf{75\% goal}) How does this transformation impact application
+performance, memory-level parallelism, and caching behavior ? 
+
+(c) (\textbf{125\% goal}) How can we automatically deduce the software access
+patterns rather than relying on programmer annotations ?
+
+(d) (\textbf{100\% goal}) How does this transformation interact with other
+compiler optimizations ?
 
 \end{itemize}
 
@@ -56,17 +96,66 @@
 
 \begin{itemize}
 
-\item \textbf{Plan of Attack and Schedule:} abc.\\
+\item \textbf{Plan of Attack and Schedule:}
 
-\item \textbf{Milestone:} abc.\\
+\textbf{Weeks 1-2 :}
+
+\begin{itemize}
+\item Joy Arulraj : Implement a matrix library along with annotations of access
+patterns and simulate the novel DRAM access primitives.
+
+\item Anuj Kalia : Transform application access patterns to leverage the DRAM
+primitives.
+
+\item Jun Woo Park : Implement a mechanism to automatically identify application
+access patterns.
+\end{itemize}
+
+\textbf{Weeks 3-4 :}
+
+\begin{itemize}
+\item Joy Arulraj : Examine how other compiler optimizations like SIMD
+operations interact with this transformation.
+
+\item Anuj Kalia : Evaluate the impact of the transformations on different
+matrix operations.
+
+\item Jun Woo Park : Examine how this transformation impacts memory level
+parallelism and caching behavior.
+\end{itemize}
+
+
+\item \textbf{Milestone:} 
+
+We plan to have a working compiler pass that transforms the matrix library 
+with programmer annotations to leverage these DRAM access primitives.
+We also hope to do some initial evaluation on the performance impact
+of this transformation.
 
 \item \textbf{Literature Search:}  
 
+We have gone through some papers on traditional DRAM access primitives and data
+locality~\cite{dram1,dram2}. We plan to read some more related papers.
+We also hope to get feedback from Vivek, who suggested this problem.
+
 \item \textbf{Resources Needed:}
 
+We plan to implement the compiler passes using the LLVM framework~\cite{llvm}.
+We already have access to machines that are sufficient for our experimental
+evaluation. We will be implementing a simple matrix library along with
+annotations to reduce the complexity of the compiler pass.
+
 \item \textbf{Getting Started:}
+
+We have started implementing the matrix library. After finalizing 
+the annotation template and the interface of the DRAM access primitives, 
+we will begin implementing the compiler pass in tandem with the matrix
+library.
   
 \end{itemize}
+
+\bibliographystyle{acm}
+\bibliography{ref}
 
 \end{document}
 
