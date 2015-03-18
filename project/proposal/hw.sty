@@ -1,0 +1,105 @@
+% Alex' default definitions and packages. Saves time
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ams tools
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{amsmath}
+\usepackage{amssymb}
+%\usepackage{amsthm}
+
+\usepackage{mdwlist}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% theorem and friends
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{theorem}
+\newcommand{\BlackBox}{\rule{1.5ex}{1.5ex}}  % end of proof
+\newtheorem{example}{Example} 
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma} 
+\newtheorem{assumption}[theorem]{Assumption} 
+\newtheorem{proposition}[theorem]{Proposition} 
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{axiom}[theorem]{Axiom}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% fancy fonts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\usepackage{eucal}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% graph drawing
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage[all]{xy}
+\CompileMatrices
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% math symbols and commands
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\eq}[1]{(\ref{#1})}
+\newcommand{\mymatrix}[2]{\left[\begin{array}{#1} #2 \end{array}\right]}
+
+%brackets
+\newcommand{\inner}[2]{\left\langle #1,#2 \right\rangle}
+\newcommand{\rbr}[1]{\left(#1\right)}
+\newcommand{\sbr}[1]{\left[#1\right]}
+\newcommand{\cbr}[1]{\left\{#1\right\}}
+\newcommand{\nbr}[1]{\left\|#1\right\|}
+\newcommand{\abr}[1]{\left|#1\right|}
+
+%sets
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\ZZ}{\mathbb{Z}}
+
+%matrix stuff
+\newcommand{\one}{\mathbf{1}}
+
+%domains
+\newcommand{\Bcal}{\mathcal{B}}
+\newcommand{\Mcal}{\mathcal{M}}
+\newcommand{\Dcal}{\mathcal{D}}
+\newcommand{\Qcal}{\mathcal{Q}}
+\newcommand{\Tcal}{\mathcal{T}}
+\newcommand{\Fcal}{\mathcal{F}}
+\newcommand{\Pcal}{\mathcal{P}}
+\newcommand{\Ccal}{\mathcal{C}}
+\newcommand{\Ocal}{\mathcal{O}}
+\newcommand{\Xcal}{\mathcal{X}}
+\newcommand{\Ical}{\mathcal{I}}
+\newcommand{\Jcal}{\mathcal{J}}
+\newcommand{\Ycal}{\mathcal{Y}}
+\newcommand{\Gcal}{\mathcal{G}}
+\newcommand{\Zcal}{\mathcal{Z}}
+\newcommand{\Ncal}{\mathcal{N}}
+\newcommand{\Ucal}{\mathcal{U}}
+\newcommand{\Ecal}{\mathcal{E}}
+\newcommand{\Hcal}{\mathcal{H}}
+\newcommand{\tildi}{\tilde{\imath}}
+\newcommand{\tildj}{\tilde{\jmath}}
+\newcommand{\bari}{\bar{\imath}}
+\newcommand{\barj}{\bar{\jmath}}
+
+%boldface
+\newcommand{\Eb}{\mathbf{E}}
+
+%more operators
+\DeclareMathOperator*{\argmax}{\mathrm{argmax}}
+\DeclareMathOperator*{\argmin}{\mathrm{argmin}}
+\DeclareMathOperator*{\sgn}{\mathrm{sgn}}
+\DeclareMathOperator*{\tr}{\mathrm{tr}}
+\DeclareMathOperator*{\cov}{\mathrm{Cov}}
+\DeclareMathOperator*{\var}{\mathrm{Var}}
+\DeclareMathOperator*{\mini}{\mathrm{minimize}}
+\DeclareMathOperator*{\maxi}{\mathrm{maximize}}
+\DeclareMathOperator*{\E}{\mathbb{E}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% comment tools
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\intset}[1]{\cbr{1..n}}
+\newcommand{\flexset}[2]{\cbr{{#1}_1, \ldots, {#1}_{#2}}}
