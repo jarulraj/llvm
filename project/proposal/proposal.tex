@@ -56,10 +56,10 @@ to DRAM row-buffer conflicts.
 This limitation is handled by interleaving consecutively 
 addressed data locations to consecutive memory banks, so that
 the requests are spread across different banks~\cite{dram1}.
-Software systems, therefore, strive hard to layout their data structures 
+Software systems, therefore, strive hard to lay out their data structures 
 to benefit from sequential access patterns. 
 For instance, DBMSs targeting analytical workloads use a columnar data 
-layout so that the consecutive fields in the same tabular column are stored in
+layout so that consecutive fields in the same tabular column are stored in
 consecutively addressed data locations~\cite{col1}.
 
 However, if DRAM were to support both row and columnar access patterns
@@ -67,7 +67,7 @@ efficiently, then the design complexity of software systems can be significantly
 reduced. Instead, the compiler can automatically transform the software access
 patterns to leverage these novel DRAM access primitives. 
 In this project, we propose to implement these compiler transformations based
-on a DRAM access cost-model and evaluate the potential benefits of these DRAM
+on a DRAM access cost model and evaluate the potential benefits of these DRAM
 access primitives in a custom matrix library. 
 
 We will initially rely on programmer annotations to identify these access
