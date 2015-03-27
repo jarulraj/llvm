@@ -3,7 +3,7 @@ all: MemoryAccess.so inputs
 CXX = clang
 CXXFLAGS = -rdynamic $(shell llvm-config --cxxflags) -fcolor-diagnostics -g -O0
 OPT = opt
-TEST = test-inputs
+TEST = tests
 
 %.so: %.o
 	$(CXX) -dylib -shared $^ -o $@
