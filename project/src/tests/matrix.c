@@ -107,7 +107,8 @@ int SumColumn(struct Matrix *matrix, int col_id) {
     size_t num_rows = matrix->num_rows;
     int row_itr;
 
-    int sum = 0;
+    __attribute__((annotate("my annotation"))) int sum = 0;
+
     for (row_itr = 0; row_itr < num_rows; row_itr++ ) {
         sum += data[row_itr][col_id];
     }

@@ -27,9 +27,20 @@ namespace {
             for (Module::iterator MI = M.begin(), ME = M.end(); MI != ME; ++MI) {
                 runOnFunction(*MI);
             }
+
+            // Annotations
+            for (Module::global_iterator I = M.global_begin(), E = M.global_end(); I != E; ++I) {
+                if (I->getName() == "llvm.global.annotations") {
+                    Value *V = cast<Value>(I->getOperand(0));
+                    outs()<<"\n Annotation :: "<<*(V)<<"\n";
+                    outs()<<"\n "<<*(V->getType())<<"\n";
+                }
+            }
+
+
         }
 
-    public:
+        public:
 
         static char ID;
 
@@ -72,7 +83,7 @@ namespace {
                 outs() << arg_count << ",\t";
             }
             outs() << callsite_count << ",\t" << block_count << ",\t"
-                   << instruction_count << "\n";
+                << instruction_count << "\n";
 
             return false;
         }
