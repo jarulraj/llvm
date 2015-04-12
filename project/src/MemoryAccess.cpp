@@ -37,7 +37,7 @@ namespace {
 
             // Print info about each function
             for (Module::iterator MI = M.begin(), ME = M.end(); MI != ME; ++MI) {
-                runOnFunctionWithModule(*MI, M);
+                runOnFunction(*MI);
             }
 
         }
@@ -55,7 +55,7 @@ namespace {
             AU.setPreservesAll();
         }
 
-        virtual bool runOnFunctionWithModule(Function &F, Module& M ) {
+        virtual bool runOnFunction(Function &F) {
             if (F.size() == 0)
                 return false;
             outs() << F.getName() << ":\n\n";
