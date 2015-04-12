@@ -74,10 +74,10 @@ namespace {
                             if (const GEPOperator *GEP = dyn_cast<GEPOperator>(pointer_operand)) {
 
                                 const Value* pointer_operand = GEP->getPointerOperand();
-                                
-                                if(std::count(structures.begin(), structures.end(), pointer_operand) == 0)
-                                    continue;
-                                
+
+                                //if(std::count(structures.begin(), structures.end(), pointer_operand) == 0)
+                                //    continue;
+
                                 outs() << "Pointer : ";
                                 pointer_operand->print(outs());
                                 outs() << "\n";
@@ -113,9 +113,9 @@ namespace {
             virtual bool runOnFunction(Function &F) {
                 if (F.size() == 0)
                     return false;
-                
+
                 outs() << F.getName() << ":\n\n";
-                
+
                 // ANNOTATION ANALYSIS
 
                 // Annotations always in the entry block
@@ -144,11 +144,11 @@ namespace {
                     if (mapValueToArgument.count(annotatedValue)) {
                         annotatedValue = mapValueToArgument[annotatedValue];
                     }
-                    
+
                     Value *annotation = I->getOperand(1);
                     Value *filename = I->getOperand(2);
                     Value *linenumber = I->getOperand(3);
-                   
+
                     outs() << getGlobalStringConstant(filename) << ":" << *linenumber << " " <<
                         "\t" << *annotatedValue << "\t" << getGlobalStringConstant(annotation) << "\n";
 
