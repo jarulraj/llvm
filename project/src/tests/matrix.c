@@ -28,7 +28,7 @@ void StartTimer() {
 void StopTimer() {
     clock_gettime(CLOCK_MONOTONIC, &tend);
 
-    printf("Duration :: %.5f seconds\n",((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - 
+    printf("Duration :: %.5f seconds\n",((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) -
             ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec));
 }
 
@@ -52,7 +52,7 @@ struct Matrix *AllocateMatrix(size_t num_rows, size_t num_cols) {
     }
 
     return ret;
-}  
+}
 
 // Initialize the matrix
 void InitMatrix(struct Matrix *matrix) {
@@ -103,11 +103,11 @@ int SumRow(struct Matrix *matrix, int row_id) {
 
 // Sum a column
 int SumColumn(struct Matrix *matrix, int col_id) {
-    int **data = matrix->data;
+    __attribute__((annotate("matrix annotation")))int **data = matrix->data;
     size_t num_rows = matrix->num_rows;
     int row_itr;
 
-    __attribute__((annotate("my annotation"))) int sum = 0;
+    int sum = 0;
 
     for (row_itr = 0; row_itr < num_rows; row_itr++ ) {
         sum += data[row_itr][col_id];

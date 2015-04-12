@@ -7,6 +7,10 @@
 #include "llvm/IR/Function.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Instructions.h"
+#include "llvm/IR/Constants.h"
+
+
 
 #include <ostream>
 #include <fstream>
@@ -15,28 +19,26 @@
 using namespace llvm;
 
 namespace {
+    StringRef getGlobalStringConstant(Value *val) {
+        if (val->getValueID() != Value::ConstantExprVal) {
+            outs() << val->getValueID() << "\t" << Value::ConstantExprVal;
+            return StringRef();
+        }
+        ConstantExpr *ce = (ConstantExpr *)val;
+        GlobalVariable *gv = (GlobalVariable *)ce->getOperand(0);
+        return cast<ConstantDataArray>(gv->getInitializer())->getAsString();
+    }
 
     class MemoryAccess : public ModulePass {
 
         // Output the function information to standard out.
         void printMemoryAccess(Module& M) {
             outs() << "Module " << M.getModuleIdentifier().c_str() << "\n";
-            outs() << "Name,\tArgs,\tCalls,\tBlocks,\tInsns\n";
 
             // Print info about each function
             for (Module::iterator MI = M.begin(), ME = M.end(); MI != ME; ++MI) {
-                runOnFunction(*MI);
+                runOnFunctionWithModule(*MI, M);
             }
-
-            // Annotations
-            for (Module::global_iterator I = M.global_begin(), E = M.global_end(); I != E; ++I) {
-                if (I->getName() == "llvm.global.annotations") {
-                    Value *V = cast<Value>(I->getOperand(0));
-                    outs()<<"\n Annotation :: "<<*(V)<<"\n";
-                    outs()<<"\n "<<*(V->getType())<<"\n";
-                }
-            }
-
 
         }
 
@@ -53,37 +55,62 @@ namespace {
             AU.setPreservesAll();
         }
 
-        virtual bool runOnFunction(Function &F) {
-            bool is_var_arg = false;
-            size_t arg_count = 0;
-            size_t callsite_count = 0;
-            size_t block_count = 0;
-            size_t instruction_count = 0;
+        virtual bool runOnFunctionWithModule(Function &F, Module& M ) {
+            if (F.size() == 0)
+                return false;
+            outs() << F.getName() << ":\n\n";
+            std::map<Value *,Argument*> mapValueToArgument;
+            // Annotations always in the entry block
+            BasicBlock *b = &F.getEntryBlock();
 
-            // Get all the required information
-            std::string function_name = F.getName(); // Get name
-            is_var_arg = F.isVarArg(); // Check if # arguments is variable
-            if (!is_var_arg) {
-                arg_count = F.arg_size(); // # fixed args
+            //Build pointer to value mapping
+            for(BasicBlock::iterator it = b->begin();it!=b->end();++it)
+            {
+                Instruction *inst = it;
+                if(inst->getOpcode()!=Instruction::Store)
+                    continue;
+
+                // `store` operands: http://llvm.org/docs/LangRef.html#i_store
+                mapValueToArgument[inst->getOperand(1)] = (Argument *)inst->getOperand(0);
+            }
+            for(BasicBlock::iterator it = b->begin(); it!=b->end();++it) {
+                Instruction *inst = it;
+                if (inst->getOpcode()!=Instruction::BitCast) {
+                    continue;
+                }
+                if (mapValueToArgument.count(inst->getOperand(0))) {
+                    mapValueToArgument[inst] = mapValueToArgument[inst->getOperand(0)];
+                }
+
             }
 
-            callsite_count = F.getNumUses(); // # direct call sites
-            block_count = F.size(); // # basic blocks
+            for (auto it = b->begin(); it != b->end(); it++) {
+                Instruction *I = it;
+                if (I->getOpcode() != Instruction::Call) {
+                    continue;
+                }
+                Value *calledFunction = I->getOperand(I->getNumOperands()-1);
+                if(calledFunction->getName().str() != "llvm.var.annotation")
+                    continue;
+                Value * annotatedValue = I->getOperand(0);
+//                if (mapValueToArgument.count(annotatedValue)) {
+//                    annotatedValue = mapValueToArgument[annotatedValue];
+//                }
+                Value *annotation = I->getOperand(1);
 
-            // # instructions
-            for (Function::iterator FI = F.begin(), FE = F.end(); FI != FE; ++FI) {
-                instruction_count += FI->size();
-            }
+                // `ConstantExpr` operands: http://llvm.org/docs/LangRef.html#constantexprs
+                //         Value *gv = ce->getOperand(0);
+                //
+                //                 if(gv->getValueID() != Value::GlobalVariableVal)
+                //                             continue;
+                //
 
-            // Print Information
-            outs() << function_name  << ",\t";
-            if (is_var_arg) {
-                outs() << "*,\t";
-            } else {
-                outs() << arg_count << ",\t";
+                Value * filename = I->getOperand(2);
+                Value * linenumber = I->getOperand(3);
+                outs() << getGlobalStringConstant(filename) << ":" << *linenumber << " " <<
+                    "\t" << *annotatedValue << "\t" << getGlobalStringConstant(annotation) << "\n";
+
             }
-            outs() << callsite_count << ",\t" << block_count << ",\t"
-                << instruction_count << "\n";
 
             return false;
         }
