@@ -59,28 +59,18 @@ namespace {
             if (F.size() == 0)
                 return false;
             outs() << F.getName() << ":\n\n";
-            std::map<Value *,Argument*> mapValueToArgument;
+            std::map<Value *, Value *> mapValueToArgument;
             // Annotations always in the entry block
             BasicBlock *b = &F.getEntryBlock();
 
             //Build pointer to value mapping
-            for(BasicBlock::iterator it = b->begin();it!=b->end();++it)
-            {
-                Instruction *inst = it;
-                if(inst->getOpcode()!=Instruction::Store)
-                    continue;
-
-                // `store` operands: http://llvm.org/docs/LangRef.html#i_store
-                mapValueToArgument[inst->getOperand(1)] = (Argument *)inst->getOperand(0);
-            }
             for(BasicBlock::iterator it = b->begin(); it!=b->end();++it) {
                 Instruction *inst = it;
                 if (inst->getOpcode()!=Instruction::BitCast) {
                     continue;
                 }
-                if (mapValueToArgument.count(inst->getOperand(0))) {
-                    mapValueToArgument[inst] = mapValueToArgument[inst->getOperand(0)];
-                }
+
+                mapValueToArgument[inst] = inst->getOperand(0);
 
             }
 
@@ -93,9 +83,9 @@ namespace {
                 if(calledFunction->getName().str() != "llvm.var.annotation")
                     continue;
                 Value * annotatedValue = I->getOperand(0);
-//                if (mapValueToArgument.count(annotatedValue)) {
-//                    annotatedValue = mapValueToArgument[annotatedValue];
-//                }
+                if (mapValueToArgument.count(annotatedValue)) {
+                    annotatedValue = mapValueToArgument[annotatedValue];
+                }
                 Value *annotation = I->getOperand(1);
 
                 // `ConstantExpr` operands: http://llvm.org/docs/LangRef.html#constantexprs
