@@ -126,5 +126,4 @@ namespace {
     // initialization value is unimportant.
     char MemoryAccess::ID = 0;
     RegisterPass<MemoryAccess> X("memory-access", "15745: Memory Access Optimization");
-
 }

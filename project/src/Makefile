@@ -1,4 +1,4 @@
-all: MemoryAccess.so inputs 
+all: MemoryAccess.so LoopMemoryAnalysis.so inputs 
 
 CXX = clang
 CXXFLAGS = -rdynamic $(shell llvm-config --cxxflags) -fcolor-diagnostics -g -O0
