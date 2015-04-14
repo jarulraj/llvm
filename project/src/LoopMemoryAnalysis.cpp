@@ -39,13 +39,13 @@ namespace {
     }
 
     static Value *getPointerOperand(Instruction &Inst) {
-          if (LoadInst *Load = dyn_cast<LoadInst>(&Inst))
-                  return Load->getPointerOperand();
-            else if (StoreInst *Store = dyn_cast<StoreInst>(&Inst))
-                    return Store->getPointerOperand();
-              else if (GetElementPtrInst *Gep = dyn_cast<GetElementPtrInst>(&Inst))
-                      return Gep->getPointerOperand();
-                return nullptr;
+        if (LoadInst *Load = dyn_cast<LoadInst>(&Inst))
+            return Load->getPointerOperand();
+        else if (StoreInst *Store = dyn_cast<StoreInst>(&Inst))
+            return Store->getPointerOperand();
+        else if (GetElementPtrInst *Gep = dyn_cast<GetElementPtrInst>(&Inst))
+            return Gep->getPointerOperand();
+        return nullptr;
     }
 
     class LoopMemoryAnalysis : public FunctionPass {
@@ -107,82 +107,82 @@ namespace {
                             if (ptr_map.count(pointer_operand) == 0 && std::count(structures.begin(), structures.end(), pointer_operand) == 0 ) {
                                 continue;
                             }
-                                //if(std::count(structures.begin(), structures.end(), pointer_operand) == 0)
-                                //    continue;
-                                outs() << "Access : " << *pointer_operand << "\n";
-                                outs() << "Variable : ";
-                                ptr_map[pointer_operand]->print(outs());
+                            //if(std::count(structures.begin(), structures.end(), pointer_operand) == 0)
+                            //    continue;
+                            outs() << "Access : " << *pointer_operand << "\n";
+                            outs() << "Variable : ";
+                            ptr_map[pointer_operand]->print(outs());
+                            outs() << "\n";
+
+
+                            for (GEPOperator::const_op_iterator idx = GEP->idx_begin(), end = GEP->idx_end(); idx != end; idx++) {
+
+                                if(idx == GEP->idx_begin())
+                                    continue;
+
+                                const SCEV *index = SE->getSCEV(*idx);
+
+                                outs() << "Index : ";
+                                index->print(outs());
                                 outs() << "\n";
 
+                                // DELINEARIZE
 
-                                for (GEPOperator::const_op_iterator idx = GEP->idx_begin(), end = GEP->idx_end(); idx != end; idx++) {
+                                const BasicBlock *BB = I->getParent();
+                                // Delinearize the memory access as analyzed in all the surrounding loops.
+                                // Do not analyze memory accesses outside loops.
+                                for (Loop *loop = LI->getLoopFor(BB); loop != nullptr; loop = loop->getParentLoop()) {
+                                    const SCEV *AccessFn = SE->getSCEVAtScope(getPointerOperand(*I), loop);
 
-                                    if(idx == GEP->idx_begin())
+                                    const SCEVUnknown *BasePointer =
+                                        dyn_cast<SCEVUnknown>(SE->getPointerBase(AccessFn));
+                                    // Do not delinearize if we cannot find the base pointer.
+                                    if (!BasePointer)
+                                        break;
+                                    AccessFn = SE->getMinusSCEV(AccessFn, BasePointer);
+                                    const SCEVAddRecExpr *AR = dyn_cast<SCEVAddRecExpr>(AccessFn);
+
+                                    // Do not try to delinearize memory accesses that are not AddRecs.
+                                    if (!AR)
+                                        break;
+
+                                    //outs() << "Analysing index : ";
+                                    //AccessFn->print(outs());
+                                    //outs() << "\n";
+
+                                    //outs() << "\n";
+                                    //outs() << "Inst:" << *I << "\n";
+                                    //outs() << "In Loop with Header: " << loop->getHeader()->getName() << "\n";
+                                    //outs() << "AddRec: " << *AR << "\n";
+
+                                    SmallVector<const SCEV *, 3> Subscripts, Sizes;
+                                    AR->delinearize(*SE, Subscripts, Sizes, SE->getElementSize(I));
+
+                                    //outs() << "Subscripts size : ";
+                                    //outs() << Subscripts.size();
+                                    //outs() << "\n";
+
+                                    if (Subscripts.size() == 0 || Sizes.size() == 0 ||
+                                            Subscripts.size() != Sizes.size()) {
+                                        //outs() << "failed to delinearize\n";
                                         continue;
-
-                                    const SCEV *index = SE->getSCEV(*idx);
-
-                                    outs() << "Index : ";
-                                    index->print(outs());
-                                    outs() << "\n";
-
-                                    // DELINEARIZE
-
-                                    const BasicBlock *BB = I->getParent();
-                                    // Delinearize the memory access as analyzed in all the surrounding loops.
-                                    // Do not analyze memory accesses outside loops.
-                                    for (Loop *loop = LI->getLoopFor(BB); loop != nullptr; loop = loop->getParentLoop()) {
-                                        const SCEV *AccessFn = SE->getSCEVAtScope(getPointerOperand(*I), loop);
-
-                                        const SCEVUnknown *BasePointer =
-                                            dyn_cast<SCEVUnknown>(SE->getPointerBase(AccessFn));
-                                        // Do not delinearize if we cannot find the base pointer.
-                                        if (!BasePointer)
-                                            break;
-                                        AccessFn = SE->getMinusSCEV(AccessFn, BasePointer);
-                                        const SCEVAddRecExpr *AR = dyn_cast<SCEVAddRecExpr>(AccessFn);
-
-                                        // Do not try to delinearize memory accesses that are not AddRecs.
-                                        if (!AR)
-                                            break;
-                     
-                                        //outs() << "Analysing index : ";
-                                        //AccessFn->print(outs());
-                                        //outs() << "\n";
-
-                                        //outs() << "\n";
-                                        //outs() << "Inst:" << *I << "\n";
-                                        //outs() << "In Loop with Header: " << loop->getHeader()->getName() << "\n";
-                                        //outs() << "AddRec: " << *AR << "\n";
-
-                                        SmallVector<const SCEV *, 3> Subscripts, Sizes;
-                                        AR->delinearize(*SE, Subscripts, Sizes, SE->getElementSize(I));
-
-                                        //outs() << "Subscripts size : ";
-                                        //outs() << Subscripts.size();
-                                        //outs() << "\n";
-
-                                        if (Subscripts.size() == 0 || Sizes.size() == 0 ||
-                                                Subscripts.size() != Sizes.size()) {
-                                            //outs() << "failed to delinearize\n";
-                                            continue;
-                                        }
-
-                                        outs() << "Base offset: " << *BasePointer << "\n";
-                                        outs() << "ArrayDecl[UnknownSize]";
-                                        int Size = Subscripts.size();
-                                        for (int i = 0; i < Size - 1; i++)
-                                            outs() << "[" << *Sizes[i] << "]";
-                                        outs() << " with elements of " << *Sizes[Size - 1] << " bytes.\n";
-
-                                        outs() << "ArrayRef";
-                                        for (int i = 0; i < Size; i++)
-                                            outs() << "[" << *Subscripts[i] << "]";
-                                        outs() << "\n";
-
                                     }
 
+                                    outs() << "Base offset: " << *BasePointer << "\n";
+                                    outs() << "ArrayDecl[UnknownSize]";
+                                    int Size = Subscripts.size();
+                                    for (int i = 0; i < Size - 1; i++)
+                                        outs() << "[" << *Sizes[i] << "]";
+                                    outs() << " with elements of " << *Sizes[Size - 1] << " bytes.\n";
+
+                                    outs() << "ArrayRef";
+                                    for (int i = 0; i < Size; i++)
+                                        outs() << "[" << *Subscripts[i] << "]";
+                                    outs() << "\n";
+
                                 }
+
+                            }
 
 
                         }
