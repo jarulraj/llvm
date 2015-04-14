@@ -127,28 +127,28 @@ namespace {
                                 const BasicBlock *BB = I->getParent();
                                 // Delinearize the memory access as analyzed in all the surrounding loops.
                                 // Do not analyze memory accesses outside loops.
-                                for (Loop *loop = LI->getLoopFor(BB); loop != nullptr; loop = loop->getParentLoop()) {
-                                    const SCEV *AccessFn = SE->getSCEVAtScope(getPointerOperand(*I), loop);
+                                
+                                Loop *loop = LI->getLoopFor(BB);
+                                const SCEV *AccessFn = SE->getSCEVAtScope(getPointerOperand(*I), loop);
 
-                                    const SCEVUnknown *BasePointer =
-                                        dyn_cast<SCEVUnknown>(SE->getPointerBase(AccessFn));
-                                    // Do not delinearize if we cannot find the base pointer.
-                                    if (!BasePointer)
-                                        break;
-                                    AccessFn = SE->getMinusSCEV(AccessFn, BasePointer);
-                                    const SCEVAddRecExpr *AR = dyn_cast<SCEVAddRecExpr>(AccessFn);
+                                const SCEVUnknown *BasePointer =
+                                    dyn_cast<SCEVUnknown>(SE->getPointerBase(AccessFn));
+                                // Do not delinearize if we cannot find the base pointer.
+                                if (!BasePointer)
+                                    break;
+                                AccessFn = SE->getMinusSCEV(AccessFn, BasePointer);
+                                const SCEVAddRecExpr *AR = dyn_cast<SCEVAddRecExpr>(AccessFn);
 
-                                    // Do not try to delinearize memory accesses that are not AddRecs.
-                                    if (!AR)
-                                        break;
+                                // Do not try to delinearize memory accesses that are not AddRecs.
+                                if (!AR)
+                                    break;
 
-                                    outs() << "\nAnalysing index : ";
-                                    AccessFn->print(outs());
-                                    outs() << "\n";
-                                    outs() << "Inst:" << *I << "\n";
-                                    outs() << "In Loop with Header: " << loop->getHeader()->getName() << "\n\n";
+                                outs() << "\nAnalysing index : ";
+                                AccessFn->print(outs());
+                                outs() << "\n";
+                                outs() << "Inst:" << *I << "\n";
+                                outs() << "In Loop with Header: " << loop->getHeader()->getName() << "\n\n";
 
-                                }
 
                             }
 
