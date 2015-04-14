@@ -83,9 +83,9 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
     LI = &getAnalysis<LoopInfo>();
     raw_ostream &O = outs();
 
-    O << "Analysing function :: " << F.getName() << ":\n\n";
+    O << "Analysing function :: " << F.getName() << ":\n";
 
-    // ANNOTATION ANALYSIS
+    // ANNOTATION 
 
     // Annotations always in the entry block
     std::map<Value *, Value *> mapValueToArgument;
@@ -126,8 +126,6 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
 
     // DELINEARIZATION ANALYSIS
     
-    O << "Delinearization on function " << F.getName() << ":\n";
-    
     for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I) {
         Instruction *Inst = &(*I);
 
@@ -164,7 +162,8 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
             if (Subscripts.size() == 0 || Sizes.size() == 0 ||
                     Subscripts.size() != Sizes.size()) {
                 O << "failed to delinearize\n";
-                continue;
+                // Stop after innermost loop
+                break;
             }
 
             O << "Base offset: " << *BasePointer << "\n";
@@ -178,6 +177,9 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
             for (int i = 0; i < Size; i++)
                 O << "[" << *Subscripts[i] << "]";
             O << "\n";
+
+            // Stop after innermost loop
+            break;
         }
     }
 

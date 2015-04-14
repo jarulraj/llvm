@@ -24,10 +24,10 @@ env.PrependENVPath('PATH', [
 	'/s/texlive-2010/bin',
 	])
 
-pdf = env.PDF('proposal.tex')[0]
+pdf = env.PDF('milestone.tex')[0]
 Default(pdf)
 
-ps = env.Command('proposal.ps', pdf, 'pdftops $SOURCE $TARGET')
+ps = env.Command('milestone.ps', pdf, 'pdftops $SOURCE $TARGET')
 
 Depends(pdf, [
 	 Glob('section/*.tex'),
