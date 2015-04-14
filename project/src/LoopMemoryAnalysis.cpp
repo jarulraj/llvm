@@ -122,10 +122,6 @@ namespace {
 
                                 const SCEV *index = SE->getSCEV(*idx);
 
-                               outs() << "Index : ";
-                                index->print(outs());
-                                outs() << "\n";
-
                                 // DELINEARIZE
 
                                 const BasicBlock *BB = I->getParent();
@@ -151,7 +147,7 @@ namespace {
                                     outs() << "\n";
                                     outs() << "Inst:" << *I << "\n";
                                     outs() << "In Loop with Header: " << loop->getHeader()->getName() << "\n\n";
-                                    
+
                                 }
 
                             }
