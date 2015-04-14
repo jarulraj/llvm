@@ -1,5 +1,5 @@
 #include "llvm/Pass.h"
-#include "llvm/IR/Function.h"             
+#include "llvm/IR/Function.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Constants.h"
@@ -22,7 +22,7 @@
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
 
 #include <vector>
-#include <algorithm> 
+#include <algorithm>
 
 using namespace llvm;
 using namespace std;
@@ -76,6 +76,7 @@ namespace {
                 outs() << "\n-------------------------------------------------------------\n";
                 outs() << "Loop \n";
                 L->print(outs());
+                std::map<Value *, Value *> ptr_map;
 
                 SE = &getAnalysis<ScalarEvolution>();
 
@@ -83,24 +84,34 @@ namespace {
                     BasicBlock *BB = *I;
 
                     for(BasicBlock::iterator I = BB->begin(); I != BB->end(); I++) {
-
-                        if(StoreInst *SI = dyn_cast<StoreInst>(I)) {
+                        if (GEPOperator *GEP = dyn_cast<GEPOperator>(I)) {
+                            Value *pointer_operand = GEP->getPointerOperand();
+                            if (std::count(structures.begin(), structures.end(), pointer_operand)) {
+                                ptr_map[GEP] = pointer_operand;
+                                //outs() << *GEP << " points to " << *pointer_operand << "\n";
+                            } else if (ptr_map.count(pointer_operand)) {
+                                ptr_map[GEP] = ptr_map[pointer_operand];
+                                //outs() << *GEP << " points to " << *ptr_map[pointer_operand] << "\n";
+                            }
+                        }
+                        else if(StoreInst *SI = dyn_cast<StoreInst>(I)) {
                             outs() << "Store : ";
                             SI->print(outs());
                             outs() << "\n";
 
-                            const Value *pointer_operand = SI->getPointerOperand();
+                            Value *pointer_operand = SI->getPointerOperand();
+                            GEPOperator *GEP = dyn_cast<GEPOperator>(pointer_operand);
 
-                            // GetElementPtr Instruction
-                            if (const GEPOperator *GEP = dyn_cast<GEPOperator>(pointer_operand)) {
-
-                                const Value* pointer_operand = GEP->getPointerOperand();
-
+                            //outs() << "pointer operand" << *pointer_operand << "\n";
+                            // GetElementPtr Instructio
+                            if (ptr_map.count(pointer_operand) == 0 && std::count(structures.begin(), structures.end(), pointer_operand) == 0 ) {
+                                continue;
+                            }
                                 //if(std::count(structures.begin(), structures.end(), pointer_operand) == 0)
                                 //    continue;
-
-                                outs() << "Pointer : ";
-                                pointer_operand->print(outs());
+                                outs() << "Access : " << *pointer_operand << "\n";
+                                outs() << "Variable : ";
+                                ptr_map[pointer_operand]->print(outs());
                                 outs() << "\n";
 
 
@@ -172,7 +183,7 @@ namespace {
                                     }
 
                                 }
-                            }
+
 
                         }
 

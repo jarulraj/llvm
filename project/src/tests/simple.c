@@ -7,7 +7,7 @@ int main() {
     //__attribute__((annotate("matrix annotation"))) char a[10];
     char a[10];
     __attribute__((annotate("hey, this is important"))) int b[128][256];
-    
+
     int j;
     int sum = 0;
     int m = 128;
