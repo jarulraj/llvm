@@ -117,8 +117,8 @@ namespace {
 
                             for (GEPOperator::const_op_iterator idx = GEP->idx_begin(), end = GEP->idx_end(); idx != end; idx++) {
 
-                                if(idx == GEP->idx_begin())
-                                    continue;
+                                //if(idx == GEP->idx_begin())
+                                //    continue;
 
                                 const SCEV *index = SE->getSCEV(*idx);
 
@@ -137,7 +137,7 @@ namespace {
                                 if (!BasePointer)
                                     break;
 
-                                outs() << "\nBasePointer : ";
+                                outs() << "BasePointer : ";
                                 BasePointer->print(outs());
                                 outs() << "\n";
 
