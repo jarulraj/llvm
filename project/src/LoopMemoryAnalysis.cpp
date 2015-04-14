@@ -147,13 +147,13 @@ namespace {
                                         SmallVector<const SCEV *, 3> Subscripts, Sizes;
                                         AR->delinearize(*SE, Subscripts, Sizes, SE->getElementSize(I));
 
-                                        outs() << "Subscripts size : ";
-                                        outs() << Subscripts.size();
-                                        outs() << "\n";
+                                        //outs() << "Subscripts size : ";
+                                        //outs() << Subscripts.size();
+                                        //outs() << "\n";
 
                                         if (Subscripts.size() == 0 || Sizes.size() == 0 ||
                                                 Subscripts.size() != Sizes.size()) {
-                                            outs() << "failed to delinearize\n";
+                                            //outs() << "failed to delinearize\n";
                                             continue;
                                         }
 
