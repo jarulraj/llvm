@@ -1,0 +1,168 @@
+\documentclass[letterpaper]{article}
+
+\usepackage{hw}
+\usepackage{bm}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorlinks=false,urlcolor=blue]{hyperref}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{multicol}
+\usepackage{paralist}
+\usepackage{todonotes}
+\setlength{\marginparwidth}{2.15cm}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{cleveref}
+\usepackage{pdfpages}
+\usepackage{fancyhdr}
+\usepackage{verbatim}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+
+%\DeclareMathOperator*{\argmin}{arg\,min}
+%\DeclareMathOperator*{\argmax}{arg\,max}
+
+\newcommand{\email}[1]{\href{mailto:#1@cs.cmu.edu}{#1}}
+
+\pagestyle{fancy}
+\lhead{AID :: \email{jarulraj}, \email{akalia}, \email{junwoop}}
+
+\begin{document}
+
+\section*{}
+\begin{center}
+  \centerline{\textbf{\Large Optimizing Matrix Operations Using Novel DRAM
+  Access Primitives}}
+  \vspace{1em}
+  \textsc{\large CMU 15-745: Optimizing Compilers (Spring 2015)} \\
+  \vspace{3em}
+  \centerline{\large{\textbf{Group} : Joy Arulraj (\email{jarulraj}), Anuj Kalia
+  (\email{akalia})}, Jun Woo Park (\email{junwoop}) }
+  \vspace{1em}
+\end{center}
+
+\section{Project Description}
+
+\begin{itemize}
+
+\item \textbf{Project Web Page :} \url{https://www.cs.cmu.edu/~akalia/15-745/}
+
+\item \textbf{Description :} 
+
+Traditionally, when an application requests a set of different rows 
+on the same memory bank, the memory access latency is increased due
+to DRAM row-buffer conflicts.
+This limitation is handled by interleaving consecutively 
+addressed data locations to consecutive memory banks, so that
+the requests are spread across different banks~\cite{dram1}.
+Software systems, therefore, strive hard to lay out their data structures 
+to benefit from sequential access patterns. 
+For instance, DBMSs targeting analytical workloads use a columnar data 
+layout so that values in the same tabular column are stored in
+consecutively addressed data locations~\cite{col1}.
+
+However, if DRAM were to support both row and columnar access patterns
+efficiently, then the design complexity of software systems can be significantly 
+reduced. Instead, the compiler can automatically transform the software access
+patterns to leverage these novel DRAM access primitives. 
+In this project, we propose to implement these compiler transformations based
+on a DRAM access cost model and evaluate the potential benefits of these DRAM
+access primitives in a custom matrix library. 
+
+We will initially rely on programmer annotations to identify these access
+patterns.
+We eventually plan to automate the identification of different access patterns
+to automate the transformation process.
+It will also be interesting to look at how this transformation interacts with
+other compiler optimizations. For instance, we can now potentially perform
+SIMD optimizations on columnar access patterns, that is not feasible with
+traditional DRAM access primitives.
+
+\textbf{Goals :}
+
+(a) (\textbf{75\% goal}) How does this transformation impact application
+performance, memory-level parallelism, and caching behavior ? 
+
+(b) (\textbf{100\% goal}) How can we automatically identify the software access
+patterns rather than relying on programmer annotations ?
+
+(c) (\textbf{125\% goal}) How does this transformation interact with other
+compiler optimizations ?
+
+\end{itemize}
+
+\section{Logistics}
+
+\begin{itemize}
+
+\item \textbf{Plan of Attack and Schedule:}
+
+\textbf{Weeks 1-2 :}
+
+\begin{itemize}
+\item Joy Arulraj : Implement a matrix library along with annotations of access
+patterns and simulate the novel DRAM access primitives. \footnote{We plan to
+simulate them by maintaining multiple versions of the matrix laid out in both row
+and column-major orders. We will then redirect the software accesses to
+the appropriate version.}
+
+\item Anuj Kalia : Transform application access patterns to leverage the DRAM
+primitives.
+
+\item Jun Woo Park : Implement a mechanism to automatically identify application
+access patterns.
+\end{itemize}
+
+\textbf{Weeks 3-4 :}
+
+\begin{itemize}
+\item Joy Arulraj : Examine how other compiler optimizations like SIMD
+operations interact with this transformation.
+
+\item Anuj Kalia : Evaluate the impact of the transformations on different
+matrix operations.
+
+\item Jun Woo Park : Examine how this transformation impacts memory level
+parallelism and caching behavior.
+\end{itemize}
+
+
+\item \textbf{Milestone:} 
+
+We plan to have a working compiler pass that transforms the matrix library 
+with programmer annotations to leverage these DRAM access primitives.
+We also hope to do some initial evaluation on the performance impact
+of this transformation and present them in the milestone report.
+
+\item \textbf{Literature Search:}  
+
+We have gone through some papers on traditional DRAM access primitives and data
+locality~\cite{dram1,dram2}. We plan to read some more related papers.
+We also hope to get feedback from Vivek, who suggested this problem.
+
+\item \textbf{Resources Needed:}
+
+We plan to implement the compiler passes using the LLVM framework~\cite{llvm}.
+We already have access to machines that meet the requirements of our
+experimental evaluation. We will be implementing a simple matrix library along with
+annotations to reduce the complexity of the compiler pass.
+
+\item \textbf{Getting Started:}
+
+We have started implementing the matrix library. After finalizing 
+the annotation template and the interface of the DRAM access primitives, 
+we will begin implementing the compiler pass in tandem with the matrix
+library.
+  
+\end{itemize}
+
+\bibliographystyle{acm}
+\bibliography{ref}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "."
+%%% End:
