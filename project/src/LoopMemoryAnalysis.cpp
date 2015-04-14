@@ -8,6 +8,15 @@
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "llvm/Analysis/Passes.h"
+#include "llvm/Analysis/ScalarEvolutionExpressions.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/InstIterator.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Type.h"
+#include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Debug.h"
+
 #include "llvm/IR/Operator.h"
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
@@ -29,13 +38,25 @@ namespace {
         return cast<ConstantDataArray>(gv->getInitializer())->getAsString();
     }
 
+    static Value *getPointerOperand(Instruction &Inst) {
+          if (LoadInst *Load = dyn_cast<LoadInst>(&Inst))
+                  return Load->getPointerOperand();
+            else if (StoreInst *Store = dyn_cast<StoreInst>(&Inst))
+                    return Store->getPointerOperand();
+              else if (GetElementPtrInst *Gep = dyn_cast<GetElementPtrInst>(&Inst))
+                      return Gep->getPointerOperand();
+                return nullptr;
+    }
+
     class LoopMemoryAnalysis : public FunctionPass {
+
         public:
-            static char ID;
+            static char ID; // Pass identification, replacement for typeid
 
             LoopMemoryAnalysis() : FunctionPass(ID) {}
 
-            ScalarEvolution  *SE;
+            LoopInfo *LI;
+            ScalarEvolution *SE;
 
             // Interested data structures
             std::vector<Value*> structures;
@@ -95,14 +116,72 @@ namespace {
 
 
                                 for (GEPOperator::const_op_iterator idx = GEP->idx_begin(), end = GEP->idx_end(); idx != end; idx++) {
+
+                                    if(idx == GEP->idx_begin())
+                                        continue;
+
                                     const SCEV *index = SE->getSCEV(*idx);
 
                                     outs() << "Index : ";
                                     index->print(outs());
                                     outs() << "\n";
 
-                                    if (const SCEVAddRecExpr *addRec = dyn_cast<SCEVAddRecExpr>(index)) {
+                                    // DELINEARIZE
+
+                                    const BasicBlock *BB = I->getParent();
+                                    // Delinearize the memory access as analyzed in all the surrounding loops.
+                                    // Do not analyze memory accesses outside loops.
+                                    for (Loop *loop = LI->getLoopFor(BB); loop != nullptr; loop = loop->getParentLoop()) {
+                                        const SCEV *AccessFn = SE->getSCEVAtScope(getPointerOperand(*I), loop);
+
+                                        const SCEVUnknown *BasePointer =
+                                            dyn_cast<SCEVUnknown>(SE->getPointerBase(AccessFn));
+                                        // Do not delinearize if we cannot find the base pointer.
+                                        if (!BasePointer)
+                                            break;
+                                        AccessFn = SE->getMinusSCEV(AccessFn, BasePointer);
+                                        const SCEVAddRecExpr *AR = dyn_cast<SCEVAddRecExpr>(AccessFn);
+
+                                        // Do not try to delinearize memory accesses that are not AddRecs.
+                                        if (!AR)
+                                            break;
+                     
+                                        outs() << "Analysing index : ";
+                                        AccessFn->print(outs());
+                                        outs() << "\n";
+
+                                        outs() << "\n";
+                                        outs() << "Inst:" << *I << "\n";
+                                        outs() << "In Loop with Header: " << loop->getHeader()->getName() << "\n";
+                                        outs() << "AddRec: " << *AR << "\n";
+
+                                        SmallVector<const SCEV *, 3> Subscripts, Sizes;
+                                        AR->delinearize(*SE, Subscripts, Sizes, SE->getElementSize(I));
+
+                                        outs() << "Subscripts size : ";
+                                        outs() << Subscripts.size();
+                                        outs() << "\n";
+
+                                        if (Subscripts.size() == 0 || Sizes.size() == 0 ||
+                                                Subscripts.size() != Sizes.size()) {
+                                            outs() << "failed to delinearize\n";
+                                            continue;
+                                        }
+
+                                        outs() << "Base offset: " << *BasePointer << "\n";
+                                        outs() << "ArrayDecl[UnknownSize]";
+                                        int Size = Subscripts.size();
+                                        for (int i = 0; i < Size - 1; i++)
+                                            outs() << "[" << *Sizes[i] << "]";
+                                        outs() << " with elements of " << *Sizes[Size - 1] << " bytes.\n";
+
+                                        outs() << "ArrayRef";
+                                        for (int i = 0; i < Size; i++)
+                                            outs() << "[" << *Subscripts[i] << "]";
+                                        outs() << "\n";
+
                                     }
+
                                 }
 
 
@@ -122,10 +201,10 @@ namespace {
             }
 
             virtual bool runOnFunction(Function &F) {
-                if (F.size() == 0)
-                    return false;
+                SE = &getAnalysis<ScalarEvolution>();
+                LI = &getAnalysis<LoopInfo>();
 
-                outs() << F.getName() << ":\n\n";
+                outs() << "Analysing function :: " << F.getName() << ":\n\n";
 
                 // ANNOTATION ANALYSIS
 
