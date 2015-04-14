@@ -146,14 +146,14 @@ namespace {
                                         if (!AR)
                                             break;
                      
-                                        outs() << "Analysing index : ";
-                                        AccessFn->print(outs());
-                                        outs() << "\n";
+                                        //outs() << "Analysing index : ";
+                                        //AccessFn->print(outs());
+                                        //outs() << "\n";
 
-                                        outs() << "\n";
-                                        outs() << "Inst:" << *I << "\n";
-                                        outs() << "In Loop with Header: " << loop->getHeader()->getName() << "\n";
-                                        outs() << "AddRec: " << *AR << "\n";
+                                        //outs() << "\n";
+                                        //outs() << "Inst:" << *I << "\n";
+                                        //outs() << "In Loop with Header: " << loop->getHeader()->getName() << "\n";
+                                        //outs() << "AddRec: " << *AR << "\n";
 
                                         SmallVector<const SCEV *, 3> Subscripts, Sizes;
                                         AR->delinearize(*SE, Subscripts, Sizes, SE->getElementSize(I));
