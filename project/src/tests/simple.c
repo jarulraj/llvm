@@ -4,9 +4,11 @@ int main() {
 
 
     int i;
-    __attribute__((annotate("matrix annotation"))) char a[10];
-    __attribute__((annotate("hey, this is important"))) int m[20][20];
-    
+    __attribute__((annotate("matrix annotation"))) char a[100];
+    __attribute__((annotate("hey, this is important"))) int m[100][100];
+    __attribute__((annotate("hey, this is important"))) int m2[100][100][5];
+
+
     int j;
     int sum = 0;
     int n = 23;
@@ -18,6 +20,10 @@ int main() {
 
     for (int i = 0; i < n; i++)
         for (int j = 0; j < 100; j++){
+            for (int k = 0; k < 5; k++) {
+                m2[i][j][k] = 0;
+                m2[j][i][k] = 0;
+            }
             m[i][j] = 0;
             m[j][i] = 0;
 
