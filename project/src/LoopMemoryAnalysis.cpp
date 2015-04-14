@@ -38,7 +38,7 @@ namespace {
 
         // Interested data structures
         std::vector<Value*> structures;
-        
+
         public:
         static char ID; // Pass identification, replacement for typeid
 
@@ -52,11 +52,11 @@ namespace {
 
 void LoopMemoryAnalysis::getAnalysisUsage(AnalysisUsage &AU) const {
     AU.setPreservesCFG();
-    
+
     AU.addRequired<LoopInfo>();
     AU.addRequired<ScalarEvolution>();
 }
- 
+
 static StringRef getGlobalStringConstant(raw_ostream& O, Value *val) {
     if (val->getValueID() != Value::ConstantExprVal) {
         O << val->getValueID() << "\t" << Value::ConstantExprVal;
@@ -89,6 +89,7 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
 
     // Annotations always in the entry block
     std::map<Value *, Value *> mapValueToArgument;
+    std::map<Value *, Value *> mapAccessToVar;
     BasicBlock *b = &F.getEntryBlock();
 
     //Build pointer to value mapping
@@ -125,17 +126,45 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
     }
 
     // DELINEARIZATION ANALYSIS
-    
+
     O << "Delinearization on function " << F.getName() << ":\n";
-    
+
     for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I) {
         Instruction *Inst = &(*I);
 
+        if (GEPOperator *GEP = dyn_cast<GEPOperator>(Inst)) {
+            Value *pointer_operand = GEP->getPointerOperand();
+            if (std::count(structures.begin(), structures.end(), pointer_operand)) {
+                mapAccessToVar[GEP] = pointer_operand;
+                outs() << *GEP << " points to " << *pointer_operand << "\n";
+            } else if (mapAccessToVar.count(pointer_operand)) {
+                mapAccessToVar[GEP] = mapAccessToVar[pointer_operand];
+                //outs() << *GEP << " points to " << *ptr_map[pointer_operand] << "\n";
+            }
+            continue;
+        }
         // Only analyze loads and stores.
+        //
         if (!isa<StoreInst>(Inst) && !isa<LoadInst>(Inst) &&
                 !isa<GetElementPtrInst>(Inst))
             continue;
+        {
 
+        Value *pointer_operand;
+        if (isa<StoreInst>(Inst)) {
+            StoreInst *si = dyn_cast<StoreInst>(Inst);
+            pointer_operand = si->getPointerOperand();
+        } else {
+            LoadInst *li = dyn_cast<LoadInst>(Inst);
+            pointer_operand = li->getPointerOperand();
+        }
+        if (mapAccessToVar.count(pointer_operand) == 0 && std::count(structures.begin(), structures.end(), pointer_operand) == 0 ) {
+            continue;
+        }
+        }
+        if (mapAccessToVar.count(Inst) != 0) {
+            continue;
+        }
         const BasicBlock *BB = Inst->getParent();
         // Delinearize the memory access as analyzed in all the surrounding loops.
         // Do not analyze memory accesses outside loops.
