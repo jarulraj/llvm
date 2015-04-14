@@ -80,8 +80,8 @@ namespace {
 
                 SE = &getAnalysis<ScalarEvolution>();
 
-                for (Loop::block_iterator I = L->block_begin(), E = L->block_end();  I != E; ++I) {
-                    BasicBlock *BB = *I;
+                for (Loop::block_iterator BI = L->block_begin(), E = L->block_end();  BI != E; ++ BI) {
+                    BasicBlock *BB = *BI;
 
                     for(BasicBlock::iterator I = BB->begin(); I != BB->end(); I++) {
                         if (GEPOperator *GEP = dyn_cast<GEPOperator>(I)) {
