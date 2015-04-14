@@ -6,12 +6,12 @@ int main() {
     int i;
     //__attribute__((annotate("matrix annotation"))) char a[10];
     char a[10];
-    __attribute__((annotate("hey, this is important"))) char b[128][256];
+    __attribute__((annotate("hey, this is important"))) char b[32][64];
 
     int j;
     int sum = 0;
-    int m = 128;
-    int n = 256;
+    int m = 10;
+    int n = 30;
 
     for(i = 0 ; i < 100 ; i++) {
         j = i + 2;
