@@ -122,36 +122,7 @@ namespace {
 
                                 const SCEV *index = SE->getSCEV(*idx);
 
-<<<<<<< HEAD
-                                    // DELINEARIZE
-
-                                    const BasicBlock *BB = I->getParent();
-                                    
-                                    // Delinearize the memory access as analyzed in all the surrounding loops.
-                                    // Do not analyze memory accesses outside loops.
-                                    for (Loop *loop = LI->getLoopFor(BB); loop != nullptr; loop = loop->getParentLoop()) {
-                                        const SCEV *AccessFn = SE->getSCEVAtScope(getPointerOperand(*I), loop);
-
-                                        const SCEVUnknown *BasePointer =
-                                            dyn_cast<SCEVUnknown>(SE->getPointerBase(AccessFn));
-                                       
-                                        // Do not delinearize if we cannot find the base pointer.
-                                        if (!BasePointer)
-                                            break;
-                                        AccessFn = SE->getMinusSCEV(AccessFn, BasePointer);
-                                        const SCEVAddRecExpr *AR = dyn_cast<SCEVAddRecExpr>(AccessFn);
-
-                                        // Do not try to delinearize memory accesses that are not AddRecs.
-                                        if (!AR)
-                                            break;
-                     
-                                        outs() << "\nDelinearizing index : ";
-                                        AccessFn->print(outs());
-                                        outs() << "\n";
-                                        outs() << "Inst:" << *I << "\n";
-                                        outs() << "In Loop with Header: " << loop->getHeader()->getName() << "\n\n";
-=======
-                                outs() << "Index : ";
+                               outs() << "Index : ";
                                 index->print(outs());
                                 outs() << "\n";
 
@@ -175,41 +146,12 @@ namespace {
                                     if (!AR)
                                         break;
 
-                                    //outs() << "Analysing index : ";
-                                    //AccessFn->print(outs());
-                                    //outs() << "\n";
-
-                                    //outs() << "\n";
-                                    //outs() << "Inst:" << *I << "\n";
-                                    //outs() << "In Loop with Header: " << loop->getHeader()->getName() << "\n";
-                                    //outs() << "AddRec: " << *AR << "\n";
-
-                                    SmallVector<const SCEV *, 3> Subscripts, Sizes;
-                                    AR->delinearize(*SE, Subscripts, Sizes, SE->getElementSize(I));
-
-                                    //outs() << "Subscripts size : ";
-                                    //outs() << Subscripts.size();
-                                    //outs() << "\n";
-
-                                    if (Subscripts.size() == 0 || Sizes.size() == 0 ||
-                                            Subscripts.size() != Sizes.size()) {
-                                        //outs() << "failed to delinearize\n";
-                                        continue;
->>>>>>> eebbe3a4f25950dda917204948d8cbbd6ac3fc98
-                                    }
-
-                                    outs() << "Base offset: " << *BasePointer << "\n";
-                                    outs() << "ArrayDecl[UnknownSize]";
-                                    int Size = Subscripts.size();
-                                    for (int i = 0; i < Size - 1; i++)
-                                        outs() << "[" << *Sizes[i] << "]";
-                                    outs() << " with elements of " << *Sizes[Size - 1] << " bytes.\n";
-
-                                    outs() << "ArrayRef";
-                                    for (int i = 0; i < Size; i++)
-                                        outs() << "[" << *Subscripts[i] << "]";
+                                    outs() << "\nAnalysing index : ";
+                                    AccessFn->print(outs());
                                     outs() << "\n";
-
+                                    outs() << "Inst:" << *I << "\n";
+                                    outs() << "In Loop with Header: " << loop->getHeader()->getName() << "\n\n";
+                                    
                                 }
 
                             }

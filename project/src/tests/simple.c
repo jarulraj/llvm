@@ -20,7 +20,7 @@ int main() {
 
     for (int i = 0; i < m; i++)
         for (int j = 0; j < n; j++){
-            b[i][j+5] = 0;
+            b[i][j] = 0;
             //b[j][i] = 0;
 
             //a[i*n+j] = 0;
