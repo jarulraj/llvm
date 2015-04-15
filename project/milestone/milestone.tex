@@ -48,36 +48,44 @@
 
 There are no major changes to the goals we set out in the initial report.
 We plan to implement a compiler pass to perform data structure access pattern analysis, and
-then do performance evaluation to identify the impact of these DRAM access primitives.
+then do a performance evaluation to identify the impact of changing the DRAM
+access pattern by using new DRAM access primitives.
 
 \section{Accomplishment So Far}
 
-The DRAM access primitives allow us to access parts of a cacheline rather than entire cachelines,
-as is the case today.
-This allows us to retrieve the required data (for instance, a column in a matrix) in fewer reads
+\textbf{Background}: The new DRAM access primitives that we are studying in
+this project allow us to access parts of a cacheline rather than entire cachelines,
+as is the case today. The cacheline returned from a DRAM read operation is
+therefore composed of data from several cachelines, determined by choosing one
+of several ``access patterns''.
+This allows us to retrieve the required data (for instance, a column in a matrix) in fewer DRAM operations
 compared to existing access primitives. Therefore, we end up with more efficient bandwidth
 utilization and less energy consumption.
 
 We first performed an initial evaluation of the potential performance impact of this transformation.
 Specifically, we compared the time taken to compute the sum of a row and a column in a matrix laid out in
-row major order. The results are shown in Figure~\ref{fig:perf}. We observe that row sum operation is several magnitudes faster compared to column sum operation. 
-With the help of novel DRAM primitives, we think that the compiler can automatically identify the best
-access pattern for the data structure.
+row-major order. The results are shown in Figure~\ref{fig:perf}. We observe that summing a row is several times faster than column sum.
+Our goal is to optimize the column sum operation by first identifying the
+strided access pattern in the compiler, and then using the new DRAM access and
+layout primitives to read multiple atoms in a DRAM operation.
 
 \begin{figure*}[ht]
 	\centering
 	\includegraphics[scale=0.35]{rowmajor}
-	\caption{Performance comparison of row and column oriented access pattern. On the x-axis the matrix dimension refers to the $\log_2$ of actual size of the two-dimensional matrix. }
+	\caption{Performance comparison of row and column oriented access pattern.
+	The X dimension refers to the $\log_2$ of actual size of the two-dimensional matrix. }
 	\label{fig:perf}
 \end{figure*}
 
 We have implemented an LLVM compiler pass that analyses data structure access patterns.
 Currently, this targets multi-dimensional arrays of primitive data types as well as structures.
-In the first stage of the pass, we parse programmer annotations to determine the data structures that
-we wish to analyze. We could apply the analysis on all loads and stores, but we wanted to restrict our
+We assume that the programmer has annotated the data structures that should be
+analysed using LLVM annotations.
+We could apply the analysis on all loads and stores, but we wanted to restrict our
 analysis to important data structures that are accessed several times in loops.
+In the first stage of the pass, we parse the annotations to determine these data structures.
 Then, for each loop within a function, we analyze every load and store operation using
-the Scalar Evolution (SCEV) pass to examine the scalar expressions contained in data structure
+LLVM's Scalar Evolution (SCEV) pass to examine the scalar expressions contained in data structure
 access indices. This allows us to recognize the generic induction variables in loops.
 We can therefore determine the stride and offset of the access pattern. 
 
@@ -128,11 +136,12 @@ Inst:   store i8 %4, i8* %b, align 1
 AddRec: {1,+,3}<nw><%for.cond>
 \end{Verbatim}
 
-We are now figuring out how best to use this information to automatically transform the access patterns.
+We are now figuring out how best to use this information to automatically
+choose the best data access and layout pattern.
 
 \section{Meeting Milestone}
 
-We have implemented the compiler pass that analyses the matrix library automatically without requiring
+We have implemented the compiler pass that analyses our benchmark library automatically without requiring
 programmer annotations about stride and offset. However, we still need to figure out how to do
 a realistic performance evaluation. A first-order approximation of the performance impact is
 however already seen in Figure~\ref{fig:perf}. 
