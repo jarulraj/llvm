@@ -126,7 +126,7 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
     }
 
     // DELINEARIZATION ANALYSIS
-   
+
     for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I) {
         Instruction *Inst = &(*I);
 
@@ -146,23 +146,25 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
         if (!isa<StoreInst>(Inst) && !isa<LoadInst>(Inst) &&
                 !isa<GetElementPtrInst>(Inst))
             continue;
-        {
 
-        Value *pointer_operand;
-        if (isa<StoreInst>(Inst)) {
-            StoreInst *si = dyn_cast<StoreInst>(Inst);
-            pointer_operand = si->getPointerOperand();
-        } else {
-            LoadInst *li = dyn_cast<LoadInst>(Inst);
-            pointer_operand = li->getPointerOperand();
+        {
+            Value *pointer_operand;
+            if (isa<StoreInst>(Inst)) {
+                StoreInst *si = dyn_cast<StoreInst>(Inst);
+                pointer_operand = si->getPointerOperand();
+            } else {
+                LoadInst *li = dyn_cast<LoadInst>(Inst);
+                pointer_operand = li->getPointerOperand();
+            }
+            if (mapAccessToVar.count(pointer_operand) == 0 && std::count(structures.begin(), structures.end(), pointer_operand) == 0 ) {
+                continue;
+            }
         }
-        if (mapAccessToVar.count(pointer_operand) == 0 && std::count(structures.begin(), structures.end(), pointer_operand) == 0 ) {
-            continue;
-        }
-        }
+
         if (mapAccessToVar.count(Inst) != 0) {
             continue;
         }
+
         const BasicBlock *BB = Inst->getParent();
         // Delinearize the memory access as analyzed in all the surrounding loops.
         // Do not analyze memory accesses outside loops.
