@@ -19,17 +19,17 @@ struct Matrix {
 };
 
 // Timing
-struct timespec tstart={0,0}, tend={0,0};
-
-void StartTimer() {
+struct timespec StartTimer() {
+    struct timespec tstart;
     clock_gettime(CLOCK_MONOTONIC, &tstart);
+    return tstart;
 };
 
-void StopTimer() {
+double StopTimer(struct timespec tstart) {
+    struct timespec tend;
     clock_gettime(CLOCK_MONOTONIC, &tend);
-
-    printf("Duration :: %.5f seconds\n",((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - 
-            ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec));
+    return ((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - 
+            ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec);
 }
 
 
@@ -47,6 +47,10 @@ struct Matrix *AllocateMatrix(size_t num_rows, size_t num_cols) {
 
     return ret;
 }  
+
+void FreeMatrix(struct Matrix *m) {
+    free(m->data);
+}
 
 // Initialize the matrix
 void InitMatrix(struct Matrix *matrix) {
@@ -118,18 +122,28 @@ int SumColumn(struct Matrix *matrix, int col_id) {
 int main () {
 
     struct Matrix *a;
+    std::vector<int> v = {8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768};
+    std::vector<double> rowtime, columntime;
+    printf("size\trow\tcolumn")
+    for (auto s : v) {
 
-    a = AllocateMatrix(1024 * SIZE, 1024 * SIZE);
-    InitMatrix(a);
-    //PrintMatrix(a);
+        a = AllocateMatrix(s, s);
+        InitMatrix(a);
+        //PrintMatrix(a);
 
-    StartTimer();
-    SumRow(a, 2);
-    StopTimer();
+        auto startt = StartTimer();
+        SumRow(a, 2);
+        double t = StopTimer(startt);
+        rowtime.push_back(t);
 
-    StartTimer();
-    SumColumn(a, 3);
-    StopTimer();
+        startt = StartTimer();
+        SumColumn(a, 3);
+        t = StopTimer(startt);
+        columntime.push_back(t);
+        FreeMatrix(a);
+
+        printf("%d\t%f\t%f\n", s, rowtime.back(), columntime.back());
+    }
 
     return 0;
 }
