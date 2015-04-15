@@ -84,10 +84,12 @@ analysed using LLVM annotations.
 We could apply the analysis on all loads and stores, but we wanted to restrict our
 analysis to important data structures that are accessed several times in loops.
 In the first stage of the pass, we parse the annotations to determine these data structures.
-Then, for each loop within a function, we analyze every load and store operation using
-LLVM's Scalar Evolution (SCEV) pass to examine the scalar expressions contained in data structure
-access indices. This allows us to recognize the generic induction variables in loops.
-We can therefore determine the stride and offset of the access pattern. 
+Then, for each loop within a function, we analyze loads and stores to these
+data structures using LLVM's Scalar Evolution (SCEV) pass. Given a scope and a
+register, the SCEV pass yields an expression that represents the register's
+evolution inside the scope. When applied to the load or store address of the
+annotated data structure in the innermost loop, the this gives us the stride
+with which the program performs these loads and stores.
 
 The output of the compiler pass on a sample program is shown below :
 
