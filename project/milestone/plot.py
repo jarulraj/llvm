@@ -30,8 +30,8 @@ ax1.plot(x, y2, color=my_color["orange"],
          label='Column sum', linewidth=2.0, marker="^")
 
 lines, labels = ax1.get_legend_handles_labels()
-ax1.set_xlabel("Dimension of matrix", fontsize=20)
-ax1.set_ylabel("Average task completion time", fontsize=20)
+ax1.set_xlabel("Matrix Dimension", fontsize=20)
+ax1.set_ylabel("Average task completion time (us)", fontsize=20)
 ax1.legend(lines, labels, loc="upper left")
 ax1.set_xticks(x)
 

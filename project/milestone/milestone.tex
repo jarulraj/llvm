@@ -64,10 +64,10 @@ row major order. The results are shown in Figure~\ref{fig:perf}. We observe that
 With the help of novel DRAM primitives, we think that the compiler can automatically identify the best
 access pattern for the data structure.
 
-\begin{figure*}
+\begin{figure*}[ht]
 	\centering
-	\includegraphics[scale=0.4]{rowmajor}
-	\caption{Performance comparison of row and column oriented access in log scale}
+	\includegraphics[scale=0.35]{rowmajor}
+	\caption{Performance comparison of row and column oriented access pattern. On the x-axis the matrix dimension refers to the $\log_2$ of actual size of the two-dimensional matrix. }
 	\label{fig:perf}
 \end{figure*}
 
