@@ -19,6 +19,8 @@
 \usepackage{fancyvrb}
 \usepackage{tikz}
 \usetikzlibrary{arrows}
+\usepackage{graphicx}
+
 
 %\DeclareMathOperator*{\argmin}{arg\,min}
 %\DeclareMathOperator*{\argmax}{arg\,max}
@@ -58,9 +60,16 @@ utilization and less energy consumption.
 
 We first performed an initial evaluation of the potential performance impact of this transformation.
 Specifically, we compared the time taken to compute the sum of a row and a column in a matrix laid out in
-row major order. The results are shown in figure TODO.
+row major order. The results are shown in Figure~\ref{fig:perf}. We observe that row sum operation is several magnitudes faster compared to column sum operation. 
 With the help of novel DRAM primitives, we think that the compiler can automatically identify the best
 access pattern for the data structure.
+
+\begin{figure*}
+	\centering
+	\includegraphics[scale=0.4]{rowmajor}
+	\caption{Performance comparison of row and column oriented access in log scale}
+	\label{fig:perf}
+\end{figure*}
 
 We have implemented an LLVM compiler pass that analyses data structure access patterns.
 Currently, this targets multi-dimensional arrays of primitive data types as well as structures.
@@ -126,7 +135,7 @@ We are now figuring out how best to use this information to automatically transf
 We have implemented the compiler pass that analyses the matrix library automatically without requiring
 programmer annotations about stride and offset. However, we still need to figure out how to do
 a realistic performance evaluation. A first-order approximation of the performance impact is
-however already seen in TODO. 
+however already seen in Figure~\ref{fig:perf}. 
 
 \section{Surprises}
 
