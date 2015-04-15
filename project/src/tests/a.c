@@ -15,8 +15,8 @@ void foo(long n, long m)  {
     char x;
     for (long i = 0; i < n; i++) {
         for (long j = 0; j < m; j++){
-            //A[i][j] = 0;
-            //A[j][i] = 0;
+            A[i][j] = 0;
+            A[j][i] = 0;
 
             x = keys[i].a;
             keys[i].b = x;

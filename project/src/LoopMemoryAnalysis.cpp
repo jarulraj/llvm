@@ -184,7 +184,8 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
                 break;
 
             O << "\n";
-            O << "Inst:" << *Inst << "\n";
+            O << "Inst: " << *Inst << "\n";
+            O << "Operand: " << *getPointerOperand(*Inst) << "\n";
             O << "In Loop with Header: " << L->getHeader()->getName() << "\n";
             O << "AddRec: " << *AR << "\n";
 
