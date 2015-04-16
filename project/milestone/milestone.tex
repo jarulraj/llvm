@@ -47,7 +47,7 @@
 \section{Major Changes}
 
 There are no major changes to the goals we set out in the initial report.
-We plan to implement a compiler pass to perform data structure access pattern analysis, and
+We still plan to implement a compiler pass to perform data structure access pattern analysis, and
 then do a performance evaluation to identify the impact of changing the DRAM
 access pattern by using new DRAM access primitives.
 
@@ -72,8 +72,8 @@ layout primitives to read multiple atoms in a DRAM operation.
 \begin{figure*}[ht]
 	\centering
 	\includegraphics[scale=0.35]{rowmajor}
-	\caption{Performance comparison of row and column oriented access pattern.
-	The X dimension refers to the $\log_2$ of actual size of the two-dimensional matrix. }
+	\caption{Performance comparison of row and column oriented access patterns.
+	The dimension attribute along the x-axis refers to the $\log_2$ of the length of the two-dimensional square matrix. }
 	\label{fig:perf}
 \end{figure*}
 
@@ -88,7 +88,7 @@ Then, for each loop within a function, we analyze loads and stores to these
 data structures using LLVM's Scalar Evolution (SCEV) pass. Given a scope and a
 register, the SCEV pass yields an expression that represents the register's
 evolution inside the scope. When applied to the load or store address of the
-annotated data structure in the innermost loop, the this gives us the stride
+annotated data structure in the innermost loop, this gives us the stride
 with which the program performs these loads and stores.
 
 The output of the compiler pass on a sample program is shown below :
