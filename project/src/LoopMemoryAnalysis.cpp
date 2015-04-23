@@ -193,7 +193,7 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
             AR->delinearize(*SE, Subscripts, Sizes, SE->getElementSize(Inst));
             if (Subscripts.size() == 0 || Sizes.size() == 0 ||
                     Subscripts.size() != Sizes.size()) {
-                O << "failed to delinearize\n";
+                O << "failed to delinearize\n\n";
                 // Stop after innermost loop
                 break;
             }
@@ -208,7 +208,7 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
             O << "ArrayRef";
             for (int i = 0; i < Size; i++)
                 O << "[" << *Subscripts[i] << "]";
-            O << "\n";
+            O << "\n\n";
 
             // Stop after innermost loop
             break;
