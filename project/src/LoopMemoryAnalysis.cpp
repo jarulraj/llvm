@@ -76,6 +76,29 @@ static Value *getPointerOperand(Instruction &Inst) {
 
         return Gep->getPointerOperand();
     return nullptr;
+}           
+
+void parseExpression(const SCEVAddRecExpr* AR) {
+    
+    if(AR == nullptr)
+        return;
+
+    int num_operands = AR->getNumOperands();
+    raw_ostream &O = outs();
+    O << "Num operands :: " << num_operands << "\n";
+
+    const SCEV *operand = nullptr;
+    for(int op_itr = 0 ; op_itr < num_operands ; op_itr++){
+        operand = AR->getOperand(op_itr);
+        if(operand->getSCEVType() == llvm::scConstant){
+            ConstantInt *val = ((SCEVConstant*) operand)->getValue();
+            const APInt& ap_val = val->getValue();
+            O << "Constant :: " << ap_val << "\n";
+        }
+        else {
+            parseExpression((const SCEVAddRecExpr*) operand);
+        }
+    }
 }
 
 bool LoopMemoryAnalysis::runOnFunction(Function &F) {
@@ -189,6 +212,9 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
             O << "In Loop with Header: " << L->getHeader()->getName() << "\n";
             O << "AddRec: " << *AR << "\n";
 
+            // Cost model
+            parseExpression(AR);
+
             SmallVector<const SCEV *, 3> Subscripts, Sizes;
             AR->delinearize(*SE, Subscripts, Sizes, SE->getElementSize(Inst));
             if (Subscripts.size() == 0 || Sizes.size() == 0 ||
@@ -209,6 +235,7 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
             for (int i = 0; i < Size; i++)
                 O << "[" << *Subscripts[i] << "]";
             O << "\n\n";
+
 
             // Stop after innermost loop
             break;

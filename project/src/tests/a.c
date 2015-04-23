@@ -3,23 +3,21 @@
 
 void foo(long n, long m)  {
     __attribute__((annotate("hey, this is important"))) char A[128][128];
- 
+
     struct key{
-        char a;
-        char b;
-        char c;
+        char data[8];
     };
 
-    __attribute__((annotate("hey, keys"))) struct key keys[100]; 
+    size_t len = 8;
+    __attribute__((annotate("hey, keys"))) struct key keys[len]; 
 
     char x;
-    for (long i = 0; i < n; i+=2) {
-        for (long j = 0; j < m; j++){
-            A[i][j] = 0;
-            A[j][i] = 0;
+    int i, j;
 
-            x = keys[i].a;
-            keys[i].b = x;
+    for (i = 0; i < len ; i++) {
+        for (j = 0; j < len ; j++) {
+            x = keys[i].data[j];
+            x = keys[j].data[i];
         }
     }
 
