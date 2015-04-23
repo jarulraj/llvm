@@ -94,13 +94,13 @@ void parseExpression(const SCEVAddRecExpr* AR, std::vector<APInt> constants) {
 	
 	operand_0 = AR->getOperand(0);
 	operand_1 = AR->getOperand(1);
-	O << "Operands: " << *operand_0 << " " << *operand_1 << "\n";
+	O << "Operands: " << *operand_0 << ", " << *operand_1 << "\n";
 
 	if(operand_1->getSCEVType() == llvm::scConstant) {
 		ConstantInt *val_1 = ((SCEVConstant*) operand_1)->getValue();
 		const APInt& ap_val_1 = val_1->getValue();
 
-		O << "Detected strided access with stride = " << ap_val_1;
+		O << "Detected strided access with stride = " << ap_val_1 << "\n";
 		constants.push_back(ap_val_1);
 
 		/**< Push twice to avoid segfault */
