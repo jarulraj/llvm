@@ -139,7 +139,8 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
         Value *linenumber = I->getOperand(3);
 
         O << getGlobalStringConstant(O, filename) << ":" << *linenumber << " " <<
-            "\t" << *annotatedValue << "\t" << getGlobalStringConstant(O, annotation) << "\n";
+            "\t" << *annotatedValue << "\t" <<
+			getGlobalStringConstant(O, annotation) << "\n";
 
         structures.push_back(annotatedValue);
     }
@@ -160,25 +161,25 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
             }
             continue;
         }
+
         // Only analyze loads and stores.
-        //
         if (!isa<StoreInst>(Inst) && !isa<LoadInst>(Inst) &&
                 !isa<GetElementPtrInst>(Inst))
             continue;
 
-        {
-            Value *pointer_operand;
-            if (isa<StoreInst>(Inst)) {
-                StoreInst *si = dyn_cast<StoreInst>(Inst);
-                pointer_operand = si->getPointerOperand();
-            } else {
-                LoadInst *li = dyn_cast<LoadInst>(Inst);
-                pointer_operand = li->getPointerOperand();
-            }
-            if (mapAccessToVar.count(pointer_operand) == 0 && std::count(structures.begin(), structures.end(), pointer_operand) == 0 ) {
-                continue;
-            }
-        }
+		Value *pointer_operand;
+		if (isa<StoreInst>(Inst)) {
+			StoreInst *si = dyn_cast<StoreInst>(Inst);
+			pointer_operand = si->getPointerOperand();
+		} else {
+			LoadInst *li = dyn_cast<LoadInst>(Inst);
+			pointer_operand = li->getPointerOperand();
+		}
+
+		if (mapAccessToVar.count(pointer_operand) == 0 &&
+			std::count(structures.begin(), structures.end(), pointer_operand) == 0) {
+			continue;
+		}
 
         if (mapAccessToVar.count(Inst) != 0) {
             continue;
@@ -249,7 +250,6 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
                 O << "[" << *Subscripts[i] << "]";
             O << "\n\n";
 
-
             // Stop after innermost loop
             break;
         }
@@ -262,4 +262,5 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
 
 char LoopMemoryAnalysis::ID = 0;
 
-static RegisterPass<LoopMemoryAnalysis> X("loop-memory-analysis", "Analyze memory accesses within loops", false, false);
+static RegisterPass<LoopMemoryAnalysis> X("loop-memory-analysis",
+	"Analyze memory accesses within loops", false, false);
