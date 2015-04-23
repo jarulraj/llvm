@@ -78,25 +78,21 @@ static Value *getPointerOperand(Instruction &Inst) {
     return nullptr;
 }           
 
-void parseExpression(const SCEVAddRecExpr* AR) {
-    
+void parseExpression(const SCEVAddRecExpr* AR, std::vector<APInt>& constants) {
     if(AR == nullptr)
         return;
 
     int num_operands = AR->getNumOperands();
-    raw_ostream &O = outs();
-    O << "Num operands :: " << num_operands << "\n";
-
     const SCEV *operand = nullptr;
     for(int op_itr = 0 ; op_itr < num_operands ; op_itr++){
         operand = AR->getOperand(op_itr);
         if(operand->getSCEVType() == llvm::scConstant){
             ConstantInt *val = ((SCEVConstant*) operand)->getValue();
             const APInt& ap_val = val->getValue();
-            O << "Constant :: " << ap_val << "\n";
+            constants.push_back(ap_val);
         }
         else {
-            parseExpression((const SCEVAddRecExpr*) operand);
+            parseExpression((const SCEVAddRecExpr*) operand, constants);
         }
     }
 }
@@ -213,7 +209,24 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
             O << "AddRec: " << *AR << "\n";
 
             // Cost model
-            parseExpression(AR);
+            std::vector<APInt> constants;
+            parseExpression(AR, constants);
+
+            // Col vs Row
+            APInt last = constants.back();
+            constants.pop_back();
+            APInt penultimate = constants.back();
+            
+            if(last.sle(penultimate)) {
+                O << "//====------------------------------------------------===//\n";
+                O << "// Regular Access :: Pattern ID 0 \n";
+                O << "//====------------------------------------------------===//\n";
+            }
+            else {
+                O << "//====------------------------------------------------===//\n";
+                O << "// Columnar Access :: Pattern ID 1 \n";
+                O << "//====------------------------------------------------===//\n";
+            }
 
             SmallVector<const SCEV *, 3> Subscripts, Sizes;
             AR->delinearize(*SE, Subscripts, Sizes, SE->getElementSize(Inst));

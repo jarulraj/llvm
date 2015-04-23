@@ -18,7 +18,9 @@ void foo(long n, long m)  {
         for (j = 0; j < len ; j++) {
             x = keys[i].data[j];
             x = keys[j].data[i];
+            x = keys[i].data[j];
         }
     }
+
 
 }
