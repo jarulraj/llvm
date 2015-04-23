@@ -78,23 +78,34 @@ static Value *getPointerOperand(Instruction &Inst) {
     return nullptr;
 }           
 
-void parseExpression(const SCEVAddRecExpr* AR, std::vector<APInt>& constants) {
-    if(AR == nullptr)
-        return;
+void parseExpression(const SCEVAddRecExpr* AR, std::vector<APInt> constants) {
 
-    int num_operands = AR->getNumOperands();
-    const SCEV *operand = nullptr;
-    for(int op_itr = 0 ; op_itr < num_operands ; op_itr++){
-        operand = AR->getOperand(op_itr);
-        if(operand->getSCEVType() == llvm::scConstant){
-            ConstantInt *val = ((SCEVConstant*) operand)->getValue();
-            const APInt& ap_val = val->getValue();
-            constants.push_back(ap_val);
-        }
-        else {
-            parseExpression((const SCEVAddRecExpr*) operand, constants);
-        }
-    }
+    raw_ostream &O = outs();
+	O << "Call parseExpression\n";
+	/*
+	 * The outermost braces correspond to the innermost loop.
+	 */
+	if(AR->getNumOperands() != 2) {
+		O << "Too many operands in SCEVAddExpr\n";
+		exit(-1);
+	}
+
+	const SCEV *operand_0, *operand_1;
+	
+	operand_0 = AR->getOperand(0);
+	operand_1 = AR->getOperand(1);
+	O << "Operands: " << *operand_0 << " " << *operand_1 << "\n";
+
+	if(operand_1->getSCEVType() == llvm::scConstant) {
+		ConstantInt *val_1 = ((SCEVConstant*) operand_1)->getValue();
+		const APInt& ap_val_1 = val_1->getValue();
+
+		O << "Detected strided access with stride = " << ap_val_1;
+		constants.push_back(ap_val_1);
+
+		/**< Push twice to avoid segfault */
+		constants.push_back(ap_val_1);
+	}
 }
 
 bool LoopMemoryAnalysis::runOnFunction(Function &F) {
@@ -229,7 +240,7 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
                 O << "//====------------------------------------------------===//\n";
             }
 
-            SmallVector<const SCEV *, 3> Subscripts, Sizes;
+            /*SmallVector<const SCEV *, 3> Subscripts, Sizes;
             AR->delinearize(*SE, Subscripts, Sizes, SE->getElementSize(Inst));
             if (Subscripts.size() == 0 || Sizes.size() == 0 ||
                     Subscripts.size() != Sizes.size()) {
@@ -248,7 +259,7 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
             O << "ArrayRef";
             for (int i = 0; i < Size; i++)
                 O << "[" << *Subscripts[i] << "]";
-            O << "\n\n";
+            O << "\n\n";*/
 
             // Stop after innermost loop
             break;
