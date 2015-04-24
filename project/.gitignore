@@ -2,3 +2,12 @@
 
 *.bbl
 *.blg
+*.pyc
+*.py
+.hg*
+*.asm
+
+sample
+hello
+m5out
+build
