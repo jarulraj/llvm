@@ -78,35 +78,25 @@ static Value *getPointerOperand(Instruction &Inst) {
     return nullptr;
 }           
 
-void parseExpression(const SCEVAddRecExpr* AR, std::vector<APInt> constants) {
+void parseExpression(const SCEVAddRecExpr* AR, std::vector<APInt>& constants) {
+    if(AR == nullptr)
+        return;
 
-    raw_ostream &O = outs();
-	O << "Call parseExpression\n";
-	/*
-	 * The outermost braces correspond to the innermost loop.
-	 */
-	if(AR->getNumOperands() != 2) {
-		O << "Too many operands in SCEVAddExpr\n";
-		exit(-1);
-	}
-
-	const SCEV *operand_0, *operand_1;
-	
-	operand_0 = AR->getOperand(0);
-	operand_1 = AR->getOperand(1);
-	O << "Operands: " << *operand_0 << ", " << *operand_1 << "\n";
-
-	if(operand_1->getSCEVType() == llvm::scConstant) {
-		ConstantInt *val_1 = ((SCEVConstant*) operand_1)->getValue();
-		const APInt& ap_val_1 = val_1->getValue();
-
-		O << "Detected strided access with stride = " << ap_val_1 << "\n";
-		constants.push_back(ap_val_1);
-
-		/**< Push twice to avoid segfault */
-		constants.push_back(ap_val_1);
-	}
+    int num_operands = AR->getNumOperands();
+    const SCEV *operand = nullptr;
+    for(int op_itr = 0 ; op_itr < num_operands ; op_itr++){
+        operand = AR->getOperand(op_itr);
+        if(operand->getSCEVType() == llvm::scConstant){
+            ConstantInt *val = ((SCEVConstant*) operand)->getValue();
+            const APInt& ap_val = val->getValue();
+            constants.push_back(ap_val);
+        }
+        else {
+            parseExpression((const SCEVAddRecExpr*) operand, constants);
+        }
+    }
 }
+
 
 bool LoopMemoryAnalysis::runOnFunction(Function &F) {
     SE = &getAnalysis<ScalarEvolution>();
@@ -151,7 +141,7 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
 
         O << getGlobalStringConstant(O, filename) << ":" << *linenumber << " " <<
             "\t" << *annotatedValue << "\t" <<
-			getGlobalStringConstant(O, annotation) << "\n";
+            getGlobalStringConstant(O, annotation) << "\n";
 
         structures.push_back(annotatedValue);
     }
@@ -178,19 +168,19 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
                 !isa<GetElementPtrInst>(Inst))
             continue;
 
-		Value *pointer_operand;
-		if (isa<StoreInst>(Inst)) {
-			StoreInst *si = dyn_cast<StoreInst>(Inst);
-			pointer_operand = si->getPointerOperand();
-		} else {
-			LoadInst *li = dyn_cast<LoadInst>(Inst);
-			pointer_operand = li->getPointerOperand();
-		}
+        Value *pointer_operand;
+        if (isa<StoreInst>(Inst)) {
+            StoreInst *si = dyn_cast<StoreInst>(Inst);
+            pointer_operand = si->getPointerOperand();
+        } else {
+            LoadInst *li = dyn_cast<LoadInst>(Inst);
+            pointer_operand = li->getPointerOperand();
+        }
 
-		if (mapAccessToVar.count(pointer_operand) == 0 &&
-			std::count(structures.begin(), structures.end(), pointer_operand) == 0) {
-			continue;
-		}
+        if (mapAccessToVar.count(pointer_operand) == 0 &&
+                std::count(structures.begin(), structures.end(), pointer_operand) == 0) {
+            continue;
+        }
 
         if (mapAccessToVar.count(Inst) != 0) {
             continue;
@@ -228,7 +218,7 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
             APInt last = constants.back();
             constants.pop_back();
             APInt penultimate = constants.back();
-            
+
             if(last.sle(penultimate)) {
                 O << "//====------------------------------------------------===//\n";
                 O << "// Regular Access :: Pattern ID 0 \n";
@@ -241,24 +231,24 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
             }
 
             /*SmallVector<const SCEV *, 3> Subscripts, Sizes;
-            AR->delinearize(*SE, Subscripts, Sizes, SE->getElementSize(Inst));
-            if (Subscripts.size() == 0 || Sizes.size() == 0 ||
-                    Subscripts.size() != Sizes.size()) {
-                O << "failed to delinearize\n\n";
-                // Stop after innermost loop
-                break;
+              AR->delinearize(*SE, Subscripts, Sizes, SE->getElementSize(Inst));
+              if (Subscripts.size() == 0 || Sizes.size() == 0 ||
+              Subscripts.size() != Sizes.size()) {
+              O << "failed to delinearize\n\n";
+            // Stop after innermost loop
+            break;
             }
 
             O << "Base offset: " << *BasePointer << "\n";
             O << "ArrayDecl[UnknownSize]";
             int Size = Subscripts.size();
             for (int i = 0; i < Size - 1; i++)
-                O << "[" << *Sizes[i] << "]";
+            O << "[" << *Sizes[i] << "]";
             O << " with elements of " << *Sizes[Size - 1] << " bytes.\n";
 
             O << "ArrayRef";
             for (int i = 0; i < Size; i++)
-                O << "[" << *Subscripts[i] << "]";
+            O << "[" << *Subscripts[i] << "]";
             O << "\n\n";*/
 
             // Stop after innermost loop
@@ -274,4 +264,4 @@ bool LoopMemoryAnalysis::runOnFunction(Function &F) {
 char LoopMemoryAnalysis::ID = 0;
 
 static RegisterPass<LoopMemoryAnalysis> X("loop-memory-analysis",
-	"Analyze memory accesses within loops", false, false);
+        "Analyze memory accesses within loops", false, false);
