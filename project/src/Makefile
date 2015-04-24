@@ -1,7 +1,7 @@
 all: LoopMemoryAnalysis.so inputs 
 
 CXX = clang
-CXXFLAGS = -rdynamic $(shell llvm-config --cxxflags) -fcolor-diagnostics -g -O0
+CXXFLAGS = -std=c++11 -rdynamic $(shell llvm-config --cxxflags) -fcolor-diagnostics -g -O0
 OPT = opt
 TEST = tests
 

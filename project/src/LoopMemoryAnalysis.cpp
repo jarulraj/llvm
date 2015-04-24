@@ -9,7 +9,7 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instructions.h"
-#include "llvm/IR/InstIterator.h"
+#include "llvm/Support/InstIterator.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Operator.h"
@@ -24,7 +24,6 @@ using namespace llvm;
 using namespace std;
 
 #define DL_NAME "loop-memory-analysis"
-#define DEBUG_TYPE DL_NAME
 
 namespace {
 
