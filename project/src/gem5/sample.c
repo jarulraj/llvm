@@ -123,6 +123,7 @@ int main(int argc, char **argv) {
         printf("table[%2d] by field: %016lx\n", i, gather(table, i, PATTERN_COL));
     }
 
+	/*
     for (i = 0; i < 16; i += 2) {
         result.packed = gather16(table, i, PATTERN_ROW);
         printf("table[%2d:%2d] by tuple: %016lx%016lx\n", i+1, i, result.hi,
@@ -150,7 +151,7 @@ int main(int argc, char **argv) {
         result.packed = gather16(table, i, PATTERN_COL);
         printf("table[%2d:%2d] by field: %016lx%016lx\n", i+1, i, result.hi,
                 result.lo);
-    }
+    }*/
 
     return 0;
 }
