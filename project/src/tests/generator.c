@@ -116,7 +116,8 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio){
     int *data = matrix->data;
     size_t num_rows = matrix->num_rows;
     size_t num_cols = matrix->num_cols;
-    size_t num_tiles = (num_rows * num_cols)/ 64;
+    int scale = 128;
+    size_t num_tiles = (num_rows * num_cols)/ (scale * scale);
 
     int row_itr, col_itr, tile_itr;
     double rd_wr;
@@ -124,90 +125,66 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio){
     int row_offset, col_offset;
 
     for(tile_itr = 0 ; tile_itr < num_tiles ; tile_itr++) {
-        int *tile = data + (tile_itr * 64);
+        int *tile = data + (tile_itr * scale * scale);
         rd_wr= ((double)rand()/(double)RAND_MAX);
 
         // READS
         if(rd_wr < rd_wr_ratio) {
             switch(pattern_id){
                 case 0:
-                    for(row_itr = 0 ; row_itr < 8 ; row_itr++) {
-                        for(col_itr = 0 ; col_itr < 8 ; col_itr++){
+                    for(row_itr = 0 ; row_itr < scale ; row_itr++) {
+                        for(col_itr = 0 ; col_itr < scale ; col_itr++){
                             tile[row_itr*8 + col_itr] = 1;
                         }
                     }
                     break;
 
                 case 1:                 
-                    for(row_itr = 0 ; row_itr < 8 ; row_itr++) {
+                    for(row_itr = 0 ; row_itr < scale ; row_itr++) {
                         row_offset = row_itr%2;
-                        for(col_itr = row_offset ; col_itr < 8 ; col_itr+=2){
-                            tile[(row_itr-row_offset)*8+(col_itr+row_offset)] = 1;
-                            tile[(row_itr-row_offset+1)*8+(col_itr+row_offset)] = 1;
-                        }
-                    } 
-                    break;
-
-                case 2:
-                    for(row_itr = 0 ; row_itr < 8 ; row_itr++) {
-                        row_offset = row_itr%4;
-                        for(col_itr = row_offset/2 ; col_itr < 8 ; col_itr+=4){
-                            tile[(row_itr-row_offset)*8+(col_itr)] = 1;
-                            tile[(row_itr-row_offset+2)*8+(col_itr+1)] = 1;
-                            tile[(row_itr-row_offset)*8+(col_itr+3)] = 1;
-                            tile[(row_itr-row_offset+2)*8+(col_itr+4)] = 1;
+                        for(col_itr = row_offset ; col_itr < scale ; col_itr+=2){
+                            tile[(row_itr-row_offset)*scale+(col_itr+row_offset)] = 1;
+                            tile[(row_itr-row_offset+1)*scale+(col_itr+row_offset)] = 1;
                         }
                     } 
                     break;
 
                 case 3:
-                    for(col_itr = 0 ; col_itr < 8 ; col_itr++) {
-                        col_offset = col_itr%4;
-                        row_offset = col_itr - col_itr%4;
-                        for(row_itr = 0 ; row_itr < 4 ; row_itr++){
-                            tile[(col_offset)*8+(row_offset+row_itr)] = 1;
-                            tile[(col_offset+4)*8+(row_offset+row_itr)] = 1;
+                    for(col_itr = 0 ; col_itr < scale ; col_itr++) {
+                        col_offset = col_itr%(scale/2);
+                        row_offset = col_itr - col_itr%(scale/2);
+                        for(row_itr = 0 ; row_itr < (scale/2) ; row_itr++){
+                            tile[(col_offset)*scale+(row_offset+row_itr)] = 1;
+                            tile[(col_offset+(scale/2))*scale+(row_offset+row_itr)] = 1;
                         }
                     } 
                     break;
-
+ 
                 case 4:
-                    for(row_itr = 0 ; row_itr < 8 ; row_itr++) {
-                        row_offset = row_itr%4;
-                        col_offset = row_itr - row_itr%4;
-                        for(col_itr = 0 ; col_itr < 4 ; col_itr++){
-                            tile[(row_offset)*8+(col_offset+col_itr)] = 1;
-                            tile[(row_offset+4)*8+(col_offset+col_itr)] = 1;
+                    for(row_itr = 0 ; row_itr < scale ; row_itr++) {
+                        row_offset = row_itr%(scale/2);
+                        row_offset = row_itr - row_itr%(scale/2);
+                        for(col_itr = 0 ; col_itr < (scale/2) ; col_itr++){
+                            tile[(row_offset)*scale+(col_offset+col_itr)] = 1;
+                            tile[(row_offset+(scale/2))*scale+(col_offset+col_itr)] = 1;
                         }
                     } 
                     break;
-
-                case 5:
-                    for(col_itr = 0 ; col_itr < 8 ; col_itr++) {
-                        col_offset = col_itr%4;
-                        for(row_itr = col_offset/2 ; row_itr < 8 ; row_itr+=4){
-                            tile[(col_itr-col_offset)*8+(row_itr)] = 1;
-                            tile[(col_itr-col_offset+2)*8+(row_itr+1)] = 1;
-                            tile[(col_itr-col_offset)*8+(row_itr+3)] = 1;
-                            tile[(col_itr-col_offset+2)*8+(row_itr+4)] = 1;
-                        }
-                    } 
-                    break;
-
+ 
                 case 6:
-                    for(col_itr = 0 ; col_itr < 8 ; col_itr++) {
+                    for(col_itr = 0 ; col_itr < scale ; col_itr++) {
                         col_offset = col_itr%2;
-                        for(row_itr = col_offset ; row_itr < 8 ; row_itr+=2){
-                            tile[(col_itr-col_offset)*8+(row_itr+col_offset)] = 1;
-                            tile[(col_itr-col_offset+1)*8+(row_itr+col_offset)] = 1;
+                        for(row_itr = col_offset ; row_itr < scale ; row_itr+=2){
+                            tile[(col_itr-col_offset)*scale+(row_itr+col_offset)] = 1;
+                            tile[(col_itr-col_offset+1)*scale+(row_itr+col_offset)] = 1;
                         }
                     } 
                     break;
 
                 case 7:
-                    for(col_itr = 0 ; col_itr < 8 ; col_itr++){
-                        for(row_itr = 0 ; row_itr < 8 ; row_itr++) {
-                            tile[row_itr*8 + col_itr] = 1;
+                    for(col_itr = 0 ; col_itr < scale ; col_itr++){
+                        for(row_itr = 0 ; row_itr < scale ; row_itr++) {
+                            tile[row_itr*scale + col_itr] = 1;
                         }
                     }
                     break;
@@ -220,86 +197,62 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio){
         }
         // WRITES
         else {
-            
+
             switch(pattern_id){
                 case 0:
-                    for(row_itr = 0 ; row_itr < 8 ; row_itr++) {
-                        for(col_itr = 0 ; col_itr < 8 ; col_itr++){
-                            sum += tile[row_itr*8 + col_itr];
+                    for(row_itr = 0 ; row_itr < scale ; row_itr++) {
+                        for(col_itr = 0 ; col_itr < scale ; col_itr++){
+                            sum += tile[row_itr*scale + col_itr];
                         }
                     }
                     break;
 
                 case 1:                 
-                    for(row_itr = 0 ; row_itr < 8 ; row_itr++) {
+                    for(row_itr = 0 ; row_itr < scale ; row_itr++) {
                         row_offset = row_itr%2;
-                        for(col_itr = row_offset ; col_itr < 8 ; col_itr+=2){
-                            sum += tile[(row_itr-row_offset)*8+(col_itr+row_offset)];
-                            sum += tile[(row_itr-row_offset+1)*8+(col_itr+row_offset)];
-                        }
-                    } 
-                    break;
-
-                case 2:
-                    for(row_itr = 0 ; row_itr < 8 ; row_itr++) {
-                        row_offset = row_itr%4;
-                        for(col_itr = row_offset/2 ; col_itr < 8 ; col_itr+=4){
-                            sum += tile[(row_itr-row_offset)*8+(col_itr)];
-                            sum += tile[(row_itr-row_offset+2)*8+(col_itr+1)];
-                            sum += tile[(row_itr-row_offset)*8+(col_itr+3)];
-                            sum += tile[(row_itr-row_offset+2)*8+(col_itr+4)];
+                        for(col_itr = row_offset ; col_itr < scale ; col_itr+=2){
+                            sum += tile[(row_itr-row_offset)*scale+(col_itr+row_offset)];
+                            sum += tile[(row_itr-row_offset+1)*scale+(col_itr+row_offset)];
                         }
                     } 
                     break;
 
                 case 3:
-                    for(col_itr = 0 ; col_itr < 8 ; col_itr++) {
-                        col_offset = col_itr%4;
-                        row_offset = col_itr - col_itr%4;
-                        for(row_itr = 0 ; row_itr < 4 ; row_itr++){
-                            sum += tile[(col_offset)*8+(row_offset+row_itr)];
-                            sum += tile[(col_offset+4)*8+(row_offset+row_itr)];
+                    for(col_itr = 0 ; col_itr < scale ; col_itr++) {
+                        col_offset = col_itr%(scale/2);
+                        row_offset = col_itr - col_itr%(scale/2);
+                        for(row_itr = 0 ; row_itr < scale/2 ; row_itr++){
+                            sum += tile[(col_offset)*scale+(row_offset+row_itr)];
+                            sum += tile[(col_offset+4)*scale+(row_offset+row_itr)];
                         }
                     } 
                     break;
 
                 case 4:
-                    for(row_itr = 0 ; row_itr < 8 ; row_itr++) {
-                        row_offset = row_itr%4;
-                        col_offset = row_itr - row_itr%4;
-                        for(col_itr = 0 ; col_itr < 4 ; col_itr++){
-                            sum += tile[(row_offset)*8+(col_offset+col_itr)];
-                            sum += tile[(row_offset+4)*8+(col_offset+col_itr)];
-                        }
-                    } 
-                    break;
-
-                case 5:
-                    for(col_itr = 0 ; col_itr < 8 ; col_itr++) {
-                        col_offset = col_itr%4;
-                        for(row_itr = col_offset/2 ; row_itr < 8 ; row_itr+=4){
-                            sum += tile[(col_itr-col_offset)*8+(row_itr)];
-                            sum += tile[(col_itr-col_offset+2)*8+(row_itr+1)];
-                            sum += tile[(col_itr-col_offset)*8+(row_itr+3)];
-                            sum += tile[(col_itr-col_offset+2)*8+(row_itr+4)];
+                    for(row_itr = 0 ; row_itr < scale ; row_itr++) {
+                        row_offset = row_itr%(scale/2);
+                        col_offset = row_itr - row_itr%(scale/2);
+                        for(col_itr = 0 ; col_itr < (scale/2) ; col_itr++){
+                            sum += tile[(row_offset)*scale+(col_offset+col_itr)];
+                            sum += tile[(row_offset+(scale/2))*scale+(col_offset+col_itr)];
                         }
                     } 
                     break;
 
                 case 6:
-                    for(col_itr = 0 ; col_itr < 8 ; col_itr++) {
+                    for(col_itr = 0 ; col_itr < scale ; col_itr++) {
                         col_offset = col_itr%2;
-                        for(row_itr = col_offset ; row_itr < 8 ; row_itr+=2){
-                            sum += tile[(col_itr-col_offset)*8+(row_itr+col_offset)];
-                            sum += tile[(col_itr-col_offset+1)*8+(row_itr+col_offset)];
+                        for(row_itr = col_offset ; row_itr < scale ; row_itr+=2){
+                            sum += tile[(col_itr-col_offset)*scale+(row_itr+col_offset)];
+                            sum += tile[(col_itr-col_offset+1)*scale+(row_itr+col_offset)];
                         }
                     } 
                     break;
 
                 case 7:
-                    for(col_itr = 0 ; col_itr < 8 ; col_itr++){
-                        for(row_itr = 0 ; row_itr < 8 ; row_itr++) {
-                            sum += tile[row_itr*8 + col_itr];
+                    for(col_itr = 0 ; col_itr < scale ; col_itr++){
+                        for(row_itr = 0 ; row_itr < scale ; row_itr++) {
+                            sum += tile[row_itr*scale + col_itr];
                         }
                     }
                     break;
@@ -327,9 +280,10 @@ int main (int argc, char *argv[]) {
         return -1;
     }
 
-    fprintf(stdout, "initializing square matrix with dimension : %d \n", 1024*SIZE);
+    int mat_size = SIZE;
+    fprintf(stdout, "initializing square matrix with dimension : %d \n", 1024*mat_size);
 
-    mat = AllocateMatrix(1024 * SIZE, 1024 * SIZE);
+    mat = AllocateMatrix(1024*mat_size, 1024*mat_size);
     InitMatrix(mat);
 
     int pattern_id = atoi(argv[1]);
@@ -337,8 +291,10 @@ int main (int argc, char *argv[]) {
 
     fprintf(stdout, "pattern id : %d rd_wr ratio : %.2f \n", pattern_id, rd_wr_ratio);
 
+    int k;
     StartTimer();
-    AccessMatrix(mat, pattern_id, rd_wr_ratio);
+    for(k = 0 ; k < 4; k++)
+        AccessMatrix(mat, pattern_id, rd_wr_ratio);
     StopTimer();
 
     return 0;
