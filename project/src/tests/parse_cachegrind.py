@@ -34,10 +34,10 @@ for input_file_prefix in input_files:
         input_file = "%s%s" % (input_file_prefix, w)
         with open(input_file, 'r') as f:
             perfs[w][input_file_prefix] = {}
+            print "w=%s input=%s\n" % (w, input_file_prefix)
             for line in f:
                 if re.match('.+D1  miss rate:\W+(\d+.\d+)\W+\(\W+(\d+.\d+)\%\W+\+\W+(\d+.\d+).+', line):
                     tokens = re.split('.+D1  miss rate:\W+(\d+.\d+)\W+\(\W+(\d+.\d+)\%\W+\+\W+(\d+.\d+).+', line)
-                    print tokens
                     perfs[w][input_file_prefix]['d1_overall'] = float(tokens[1])
                     perfs[w][input_file_prefix]['d1_read']= float(tokens[2])
                     perfs[w][input_file_prefix]['d1_write'] = float(tokens[3])
@@ -50,7 +50,7 @@ for input_file_prefix in input_files:
                 elif re.match('Duration :: (\d+.\d+).+', line):
                     tokens = re.split('Duration :: (\d+.\d+).+', line)[1]
                     print tokens
-                    perfs[w][input_file_prefix]['runtime'] = float(tokens[0])
+                    perfs[w][input_file_prefix]['runtime'] = float(tokens)
 
 my_color = {"grey": colors.colorConverter.to_rgb("#4D4D4D"),
             "blue": colors.colorConverter.to_rgb("#5DA5DA"),
@@ -74,9 +74,13 @@ bar_labels = []
 for w in perfs:
     data = []
     for input_file in input_files:
+        print w
+        print input_file
+        print workload_data[w]
         data.append(perfs[w][input_file][workload_data[w]])
 
     baseline = data[0]
+    print data
     data = np.array(data)
     data = data/baseline
     idx = len(bar_handles)
