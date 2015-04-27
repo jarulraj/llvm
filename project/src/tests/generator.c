@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// 15-745 Project: MemoryAccess.cpp
+// 15-745 Project: Generator.c
 // Group: jarulraj, akalia, junwoop
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -29,7 +29,7 @@ void StopTimer() {
     clock_gettime(CLOCK_MONOTONIC, &tend);
 
     printf("Duration :: %.5f seconds\n",((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) -
-            ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec));
+           ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec));
 }
 
 
@@ -102,7 +102,7 @@ int SumColumn(struct Matrix *matrix, int col_id) {
     size_t num_cols = matrix->num_cols;
     int row_itr;
 
-    __attribute__((annotate("my annotation"))) int sum = 0;
+    int sum = 0;
 
     for (row_itr = 0; row_itr < num_rows; row_itr++ ) {
         sum += data[row_itr * num_cols + col_id];
@@ -112,25 +112,39 @@ int SumColumn(struct Matrix *matrix, int col_id) {
     return sum;
 }
 
+void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio){
+    int *data = matrix->data;
+    size_t num_rows = matrix->num_rows;
+    size_t num_cols = matrix->num_cols;
+
+}
+
+
 #define SIZE 16
 
 // Tester
-int main () {
+int main (int argc, char *argv[]) {
 
-    struct Matrix *a;
+    struct Matrix *mat;
 
-    a = AllocateMatrix(1024 * SIZE, 1024 * SIZE);
-    InitMatrix(a);
-    //PrintMatrix(a);
+    if(argc != 3){
+        fprintf(stderr, "Usage :: ./generator <pattern_id (0-7)> <rd-wr ratio (0-1)> \n");
+        return -1;
+    }
+    
+    fprintf(stdout, "initializing square matrix with dimension : %d \n", 1024*SIZE);
+
+    mat = AllocateMatrix(1024 * SIZE, 1024 * SIZE);
+    InitMatrix(mat);
+
+    int pattern_id = atoi(argv[1]);
+    double rd_wr_ratio = atof(argv[2]);
+
+    fprintf(stdout, "pattern id : %d rd_wr ratio : %.2f \n", pattern_id, rd_wr_ratio);
 
     StartTimer();
-    SumRow(a, 2);
-    StopTimer();
-
-    StartTimer();
-    SumColumn(a, 3);
+    AccessMatrix(mat, pattern_id, rd_wr_ratio);
     StopTimer();
 
     return 0;
 }
-
