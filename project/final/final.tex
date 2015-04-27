@@ -1,0 +1,176 @@
+\documentclass[letterpaper]{article}
+
+\usepackage{hw}
+\usepackage{bm}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorlinks=false,urlcolor=blue]{hyperref}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{multicol}
+\usepackage{paralist}
+\usepackage{todonotes}
+%\setlength{\marginparwidth}{2.15cm}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{cleveref}
+\usepackage{pdfpages}
+\usepackage{fancyhdr}
+\usepackage{fancyvrb}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usepackage{graphicx}
+
+
+%\DeclareMathOperator*{\argmin}{arg\,min}
+%\DeclareMathOperator*{\argmax}{arg\,max}
+
+\newcommand{\email}[1]{\href{mailto:#1@cs.cmu.edu}{#1}}
+
+\begin{document}
+
+\section*{}
+\begin{center}
+  \centerline{\textbf{\Large Optimizing Matrix Operations Using Novel DRAM
+  Access Primitives}}
+  \vspace{1em}
+  \textsc{\large CMU 15-745: Optimizing Compilers (Spring 2015)} \\
+  \vspace{1em}
+  \textsc{\large Final Report} \\
+  \vspace{3em}
+  \centerline{\large{\textbf{Group} : Joy Arulraj (\email{jarulraj}), Anuj Kalia
+  (\email{akalia})}, Jun Woo Park (\email{junwoop}) }
+  \vspace{1em}
+\end{center}
+
+\section{Major Changes}
+
+There are no major changes to the goals we set out in the initial report.
+We still plan to implement a compiler pass to perform data structure access pattern analysis, and
+then do a performance evaluation to identify the impact of changing the DRAM
+access pattern by using new DRAM access primitives.
+
+\section{Accomplishment So Far}
+
+\textbf{Background}: The new DRAM access primitives that we are studying in
+this project allow us to access parts of a cacheline rather than entire cachelines,
+as is the case today. The cacheline returned from a DRAM read operation is
+therefore composed of data from several cachelines, determined by choosing one
+of several ``access patterns''.
+This allows us to retrieve the required data (for instance, a column in a matrix) in fewer DRAM operations
+compared to existing access primitives. Therefore, we end up with more efficient bandwidth
+utilization and less energy consumption.
+
+We first performed an initial evaluation of the potential performance impact of this transformation.
+Specifically, we compared the time taken to compute the sum of a row and a column in a matrix laid out in
+row-major order. The results are shown in Figure~\ref{fig:perf}. We observe that summing a row is several times faster than column sum.
+Our goal is to optimize the column sum operation by first identifying the
+strided access pattern in the compiler, and then using the new DRAM access and
+layout primitives to read multiple atoms in a DRAM operation.
+
+\begin{figure*}[ht]
+	\centering
+	\includegraphics[scale=0.35]{images/rowmajor}
+	\caption{Performance comparison of row and column oriented access patterns.
+	The dimension attribute along the x-axis refers to the $\log_2$ of the length of the two-dimensional square matrix. }
+	\label{fig:perf}
+\end{figure*}
+
+We have implemented an LLVM compiler pass that analyses data structure access patterns.
+Currently, this targets multi-dimensional arrays of primitive data types as well as structures.
+We assume that the programmer has annotated the data structures that should be
+analysed using LLVM annotations.
+We could apply the analysis on all loads and stores, but we wanted to restrict our
+analysis to important data structures that are accessed several times in loops.
+In the first stage of the pass, we parse the annotations to determine these data structures.
+Then, for each loop within a function, we analyze loads and stores to these
+data structures using LLVM's Scalar Evolution (SCEV) pass. Given a scope and a
+register, the SCEV pass yields an expression that represents the register's
+evolution inside the scope. When applied to the load or store address of the
+annotated data structure in the innermost loop, this gives us the stride
+with which the program performs these loads and stores.
+
+The output of the compiler pass on a sample program is shown below :
+
+\begin{Verbatim}[fontsize=\small]
+------------------------------
+INPUT :
+------------------------------
+void foo(long n, long m)  {
+  __attribute__((annotate(``hey, this is important''))) int A[n][m];
+  struct key{
+    char a;
+    char b;
+    char c;
+  };
+  __attribute__((annotate(``hey, keys''))) struct key keys[100];
+
+  char x;
+  for (long i = 0; i < n; i++) {
+    for (long j = 0; j < m; j++){
+      A[i][j] = 0;
+      A[j][i] = 0;
+      x = keys[i].a;
+      keys[i].b = x;
+    }
+  }
+}
+------------------------------
+OUTPUT :
+------------------------------
+Analysing function :: foo:
+tests/a.c:i32 5           %vla = alloca i32, i32 %1, align 4    hey, this is important
+tests/a.c:i32 13          %keys = alloca [100 x %struct.key], align 1   hey, keys
+
+Inst:   store i32 0, i32* %arrayidx6, align 4
+AddRec: {{0,+,(4 * %m)}<%for.cond>,+,4}<nw><%for.cond3>
+ArrayRef[{0,+,1}<nuw><nsw><%for.cond>][{0,+,1}<nuw><nsw><%for.cond3>]
+
+Inst:   store i32 0, i32* %arrayidx8, align 4
+AddRec: {{0,+,4}<nuw><nsw><%for.cond>,+,(4 * %m)}<%for.cond3>
+ArrayRef[{0,+,1}<nuw><nsw><%for.cond3>][{0,+,1}<nuw><nsw><%for.cond>]
+
+Inst:   %4 = load i8* %a, align 1
+AddRec: {0,+,3}<nuw><nsw><%for.cond>
+
+Inst:   store i8 %4, i8* %b, align 1
+AddRec: {1,+,3}<nw><%for.cond>
+\end{Verbatim}
+
+We are now figuring out how best to use this information to automatically
+choose the best data access and layout pattern.
+
+\section{Meeting Milestone}
+
+We have implemented the compiler pass that analyses our benchmark library automatically without requiring
+programmer annotations about stride and offset. However, we still need to figure out how to do
+a realistic performance evaluation. A first-order approximation of the performance impact is
+however already seen in Figure~\ref{fig:perf}. 
+
+\section{Surprises}
+
+We were pleasantly surprised by the support in LLVM for analysing scalar expressions and annotations.
+This helped reduce the complexity of the compiler pass.
+
+\section{Revised Schedule}
+
+\begin{itemize}
+\item Joy Arulraj : Evaluate the performance impact of the transformations on different matrix operations.
+\item Anuj Kalia : Transform the code to use the DRAM access primitives.  
+\item Jun Woo Park : Examine how this transformation impacts memory level parallelism and caching behavior.
+\end{itemize}
+
+\section{Resources Needed:} 
+
+We need some guidance on performance evaluation. We have written our own microbenchmarks and
+are using the LLVM framework to implement our proposed optimizations.
+
+%\bibliographystyle{acm}
+%\bibliography{ref}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "."
+%%% End:
