@@ -112,6 +112,8 @@ int SumColumn(struct Matrix *matrix, int col_id) {
     return sum;
 }
 
+int op_count = 0;
+
 void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio){
     int *data = matrix->data;
     size_t num_rows = matrix->num_rows;
@@ -135,6 +137,7 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio){
                     for(row_itr = 0 ; row_itr < scale ; row_itr++) {
                         for(col_itr = 0 ; col_itr < scale ; col_itr++){
                             tile[row_itr*8 + col_itr] = 1;
+                            op_count+=1;
                         }
                     }
                     break;
@@ -145,6 +148,20 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio){
                         for(col_itr = row_offset ; col_itr < scale ; col_itr+=2){
                             tile[(row_itr-row_offset)*scale+(col_itr+row_offset)] = 1;
                             tile[(row_itr-row_offset+1)*scale+(col_itr+row_offset)] = 1;
+                            op_count+=2;
+                        }
+                    } 
+                    break;
+
+                case 2:
+                    for(row_itr = 0 ; row_itr < scale ; row_itr++) {
+                        row_offset = row_itr%4;
+                        for(col_itr = row_offset/2 ; col_itr < scale ; col_itr+=4){
+                            tile[(row_itr-row_offset)*scale+(col_itr)] = 1;
+                            tile[(row_itr-row_offset+2)*scale+(col_itr+1)] = 1;
+                            tile[(row_itr-row_offset)*scale+(col_itr+(scale/2))] = 1;
+                            tile[(row_itr-row_offset+2)*scale+(col_itr+(scale/2)+1)] = 1;
+                            op_count+=4;
                         }
                     } 
                     break;
@@ -156,10 +173,11 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio){
                         for(row_itr = 0 ; row_itr < (scale/2) ; row_itr++){
                             tile[(col_offset)*scale+(row_offset+row_itr)] = 1;
                             tile[(col_offset+(scale/2))*scale+(row_offset+row_itr)] = 1;
+                            op_count+=2;
                         }
                     } 
                     break;
- 
+
                 case 4:
                     for(row_itr = 0 ; row_itr < scale ; row_itr++) {
                         row_offset = row_itr%(scale/2);
@@ -167,16 +185,18 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio){
                         for(col_itr = 0 ; col_itr < (scale/2) ; col_itr++){
                             tile[(row_offset)*scale+(col_offset+col_itr)] = 1;
                             tile[(row_offset+(scale/2))*scale+(col_offset+col_itr)] = 1;
+                            op_count+=2;
                         }
                     } 
                     break;
- 
+
                 case 6:
                     for(col_itr = 0 ; col_itr < scale ; col_itr++) {
                         col_offset = col_itr%2;
                         for(row_itr = col_offset ; row_itr < scale ; row_itr+=2){
                             tile[(col_itr-col_offset)*scale+(row_itr+col_offset)] = 1;
                             tile[(col_itr-col_offset+1)*scale+(row_itr+col_offset)] = 1;
+                            op_count+=2;
                         }
                     } 
                     break;
@@ -185,6 +205,7 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio){
                     for(col_itr = 0 ; col_itr < scale ; col_itr++){
                         for(row_itr = 0 ; row_itr < scale ; row_itr++) {
                             tile[row_itr*scale + col_itr] = 1;
+                            op_count+=1;
                         }
                     }
                     break;
@@ -283,7 +304,7 @@ int main (int argc, char *argv[]) {
     int mat_size = SIZE;
     fprintf(stdout, "initializing square matrix with dimension : %d \n", 1024*mat_size);
 
-    mat = AllocateMatrix(1024*mat_size, 1024*mat_size);
+    mat = AllocateMatrix(64*mat_size, 64*mat_size);
     InitMatrix(mat);
 
     int pattern_id = atoi(argv[1]);
@@ -297,5 +318,7 @@ int main (int argc, char *argv[]) {
         AccessMatrix(mat, pattern_id, rd_wr_ratio);
     StopTimer();
 
+    fprintf(stdout, "op_count : %d \n", op_count);
+    
     return 0;
 }
