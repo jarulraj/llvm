@@ -15,7 +15,7 @@ struct Matrix {
     size_t num_cols;
 
     // actual data
-    int *data;
+    char *data;
 };
 
 // Timing
@@ -43,14 +43,14 @@ struct Matrix *AllocateMatrix(size_t num_rows, size_t num_cols) {
     ret->num_cols = num_cols;
 
     // allocate space
-    ret->data = (int *) malloc(sizeof (int) * num_rows * num_cols);
+    ret->data = (char *) malloc(sizeof (char) * num_rows * num_cols);
 
     return ret;
 }
 
 // Initialize the matrix
 void InitMatrix(struct Matrix *matrix) {
-    int *data = matrix->data;
+    char *data = matrix->data;
     assert(data);
     int row_itr, col_itr;
 
@@ -66,7 +66,7 @@ void InitMatrix(struct Matrix *matrix) {
 
 // Display the matrix
 void PrintMatrix(struct Matrix *matrix) {
-    int *data = matrix->data;
+    char *data = matrix->data;
     int row_itr, col_itr;
 
     size_t num_rows = matrix->num_rows;
@@ -82,7 +82,7 @@ void PrintMatrix(struct Matrix *matrix) {
 
 // Sum a row
 int SumRow(struct Matrix *matrix, int row_id) {
-    int *data = matrix->data;
+    char *data = matrix->data;
     size_t num_cols = matrix->num_cols;
     int col_itr;
 
@@ -97,7 +97,7 @@ int SumRow(struct Matrix *matrix, int row_id) {
 
 // Sum a column
 int SumColumn(struct Matrix *matrix, int col_id) {
-    int *data = matrix->data;
+    char *data = matrix->data;
     size_t num_rows = matrix->num_rows;
     size_t num_cols = matrix->num_cols;
     int row_itr;
@@ -113,7 +113,7 @@ int SumColumn(struct Matrix *matrix, int col_id) {
 }
 
 void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int scale){
-    int *data = matrix->data;
+    char *data = matrix->data;
     size_t num_rows = matrix->num_rows;
     size_t num_cols = matrix->num_cols;
     size_t num_tiles = (num_rows * num_cols)/ (scale * scale);
@@ -124,7 +124,7 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
     int row_offset, col_offset;
 
     for(tile_itr = 0 ; tile_itr < num_tiles ; tile_itr++) {
-        int *tile = data + (tile_itr * scale * scale);
+        char *tile = data + (tile_itr * scale * scale);
         rd_wr= ((double)rand()/(double)RAND_MAX);
 
         // WRITES
@@ -341,7 +341,7 @@ int main (int argc, char *argv[]) {
 
     int k;
     StartTimer();
-    for(k = 0 ; k < 100; k++)
+    for(k = 0 ; k < 5; k++)
         AccessMatrix(mat, pattern_id, rd_wr_ratio, scale);
     StopTimer();
 
