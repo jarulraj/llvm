@@ -89,7 +89,6 @@ for w in workload_names:
     real_data_for_plot.append(data)
 
 print real_data_for_plot
-sys.exit(0)
 for i,w in enumerate(workload_names):
     data = real_data_for_plot[i]
     baseline = real_data_for_plot[0][0]
