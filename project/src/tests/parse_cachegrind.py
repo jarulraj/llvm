@@ -94,6 +94,7 @@ for i,w in enumerate(workload_names):
     print data
     data = np.array(data)
     data = data/baseline
+    #data = np.log(data)
     idx = len(bar_handles)
     handle = ax.bar(ind + idx * width, data, width, color=my_color[my_color.keys()[idx]])
     bar_handles.append(handle)
@@ -103,7 +104,7 @@ for i,w in enumerate(workload_names):
 ax.set_ylabel(y_label)
 ax.set_xticks(ind + 0.8/2)
 ax.set_xticklabels(descs)
-ax.legend(bar_legendhandles, bar_labels)
+ax.legend(bar_legendhandles, bar_labels, loc='upper left')
 
 plt.savefig(outfile)
 

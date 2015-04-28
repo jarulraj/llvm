@@ -1,8 +1,8 @@
 #!/bin/bash
 prefix=${1}
-pattern=(0 1 3 4 6 7)
+pattern=(0 1 2 3 4 5 6 7)
 wr=(0 0.1 0.5)
-wr_str=("Workload 1" "Workload 2" "Workload 3")
+wr_str=("Read Only" "Read Heavy" "Write Heavy")
 scale=(128)
 for s in ${scale[@]}
 do
@@ -26,35 +26,34 @@ do
     done
     i=0
     runtime_pattern_string="${prefix}${s}_${pattern[$i]}_runtime_"
-    runtime_desc_string="Pattern $i"
+    runtime_desc_string="P $i"
     for ((i=1;i<${#pattern[@]};i++))
     do
         str="${prefix}${s}_${pattern[$i]}_runtime_"
         runtime_pattern_string="$runtime_pattern_string,${str}"
-        runtime_desc_string="$runtime_desc_string,Pattern ${pattern[$i]}"
+        runtime_desc_string="$runtime_desc_string,P ${pattern[$i]}"
     done
-    python parse_cachegrind.py "${s}_runtime.png" "Runtime" $runtime_workload_string $runtime_pattern_string $runtime_desc_string
+    python parse_cachegrind.py "${s}_runtime.png" "Runtime" "$runtime_workload_string" "$runtime_pattern_string" "$runtime_desc_string"
     
     i=0
     missrate_workload_string="${wr[$i]}:${wr_str[$i]}:d1_read"
-    echo $runtime_workload_string
     for ((i=1;i<${#wr[@]};i++))
     do
         str="${wr[$i]}:${wr_str[$i]}:d1_overall"
-        missrate_workload_string="$runtime_workload_string,${str}"
+        missrate_workload_string="$missrate_workload_string,${str}"
     done
     i=0
-    runtime_pattern_string="${prefix}${s}_${pattern[$i]}_"
-    runtime_desc_string="Pattern $i"
+    missrate_pattern_string="${prefix}${s}_${pattern[$i]}_"
+    missrate_desc_string="P $i"
     for ((i=1;i<${#pattern[@]};i++))
     do
         str="${prefix}${s}_${pattern[$i]}_"
-        runtime_pattern_string="$runtime_pattern_string,${str}"
-        runtime_desc_string="$runtime_desc_string,Pattern ${pattern[$i]}"
+        missrate_pattern_string="$missrate_pattern_string,${str}"
+        misstime_desc_string="$missrate_desc_string,P $i"
     done
 
 
-    python parse_cachegrind.py "${s}_runtime.png" "Runtime" "$runtime_workload_string" "$runtime_pattern_string" "$runtime_desc_string"
+    python parse_cachegrind.py "${s}_cache.png" "L1 Cache Miss Rate (Normalized)" "$missrate_workload_string" "$missrate_pattern_string" "$missrate_desc_string"
 
 done
 

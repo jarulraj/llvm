@@ -145,7 +145,7 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
                             tile[(row_itr-row_offset)*scale+(col_itr+row_offset)] = 1;
                             tile[(row_itr-row_offset+1)*scale+(col_itr+row_offset)] = 1;
                         }
-                    } 
+                    }
                     break;
 
                 case 2:
@@ -181,7 +181,7 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
                         }
                     }
                     break;
-                
+
                 case 5:
                     for(col_itr = 0 ; col_itr < scale ; col_itr++) {
                         col_offset = col_itr%4;
@@ -239,7 +239,7 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
                         }
                     }
                     break;
-                
+
                 case 2:
                     for(row_itr = 0 ; row_itr < scale ; row_itr++) {
                         row_offset = row_itr%4;
@@ -273,7 +273,7 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
                         }
                     }
                     break;
-                
+
                 case 5:
                     for(col_itr = 0 ; col_itr < scale ; col_itr++) {
                         col_offset = col_itr%4;
@@ -315,7 +315,7 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
 }
 
 
-#define SIZE 16
+#define SIZE 64
 
 // Tester
 int main (int argc, char *argv[]) {
@@ -341,7 +341,7 @@ int main (int argc, char *argv[]) {
 
     int k;
     StartTimer();
-    for(k = 0 ; k < 4; k++)
+    for(k = 0 ; k < 100; k++)
         AccessMatrix(mat, pattern_id, rd_wr_ratio, scale);
     StopTimer();
 
