@@ -55,6 +55,8 @@ for input_file_prefix in input_files:
                     print tokens
                     perfs[w][input_file_prefix]['runtime'] = float(tokens)
 
+print perfs
+
 my_color = {"grey": colors.colorConverter.to_rgb("#4D4D4D"),
             "blue": colors.colorConverter.to_rgb("#5DA5DA"),
             "orange": colors.colorConverter.to_rgb("#FAA43A"),
@@ -79,18 +81,18 @@ real_data_for_plot = []
 for w in workload_names:
     data = []
     for input_file in input_files:
-        print w
-        print input_file
-        print workload_data[w]
+        #print w
+        #print input_file
+        #print workload_data[w]
         data.append(perfs[w][input_file][workload_data[w]])
     data = np.array(data)
-    if len(real_data_for_plot):
-        data = data/ real_data_for_plot[0]
     real_data_for_plot.append(data)
 
+print real_data_for_plot
+sys.exit(0)
 for i,w in enumerate(workload_names):
     data = real_data_for_plot[i]
-    baseline = data[0][0]
+    baseline = real_data_for_plot[0][0]
     print data
     data = np.array(data)
     data = data/baseline
