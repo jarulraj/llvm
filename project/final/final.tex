@@ -40,6 +40,36 @@
   \vspace{1em}
 \end{center}
 
+\section{Abstract}
+
+Traditionally, when an application requests a set of different rows 
+residing on the same memory bank, the memory access latency is 
+increased due to DRAM row-buffer conflicts.
+These row-buffer conflicts can be reduced by interleaving
+consecutively addressed data locations across memory banks, so that
+the requests are spread across different banks.
+Software systems, therefore, strive hard to lay out their data structures 
+to generate access patterns that can be served efficiently by 
+the DRAM chips. 
+For instance, DBMSs targeting analytical workloads use a columnar data 
+layout so that values in the same tabular column are stored in
+consecutively addressed data locations~\cite{col1}.
+
+The design complexity of software systems can be significantly 
+reduced in future DRAM chips using novel access primitives that can 
+support both row and columnar access patterns efficiently. 
+This is feasible by appropriately laying out the data and transforming 
+the DRAM access methods.
+In this project, we focussed on automatically
+transforming the software access patterns to leverage these 
+DRAM access primitives during compilation time.
+We developed a DRAM access cost model to select the appropriate DRAM
+access primitive for different patterns. We then
+analyze the software access patterns in our compiler pass and then
+transform the code to make use of these access primitives. 
+Our evaluation of the performance impact of these transformations in 
+a matrix library showed that TODO.
+
 \section{Introduction}
 
 \subsection{The Problem}
