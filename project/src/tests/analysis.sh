@@ -3,19 +3,19 @@ prefix=${1}
 pattern=(0 1 2 3 4 5 6 7)
 wr=(0 0.1 0.5)
 wr_str=("Read Only" "Read Heavy" "Write Heavy")
-scale=(128)
+scale=${2}
 for s in ${scale[@]}
 do
 
-    for p in ${pattern[@]}
-    do 
-        for w in ${wr[@]}
-        do 
-            echo ${p} $w ${s}
-            ./generator ${p} $w ${s} > ${prefix}${s}_${p}_runtime_$w
-            valgrind --tool=cachegrind ./generator ${p} $w ${s} > ${prefix}${s}_${p}_$w 2>&1
-        done
-    done
+#    for p in ${pattern[@]}
+#    do 
+#        for w in ${wr[@]}
+#        do 
+#            echo ${p} $w ${s}
+#            ./generator ${p} $w ${s} > ${prefix}${s}_${p}_runtime_$w
+#            valgrind --tool=cachegrind ./generator ${p} $w ${s} > ${prefix}${s}_${p}_$w 2>&1
+#        done
+#    done
     i=0
     runtime_workload_string="${wr[$i]}:${wr_str[$i]}:runtime"
     echo $runtime_workload_string

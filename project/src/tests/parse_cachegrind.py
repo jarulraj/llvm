@@ -1,10 +1,10 @@
 #!/usr/bin/python
-#import matplotlib
+import matplotlib
+matplotlib.use('Agg')
+
 from matplotlib import colors
 from matplotlib import pyplot as plt
 import numpy as np
-
-
 import re
 import sys
 
@@ -90,7 +90,7 @@ for w in workload_names:
 
 for i,w in enumerate(workload_names):
     data = real_data_for_plot[i]
-    baseline = data[0]
+    baseline = data[0][0]
     print data
     data = np.array(data)
     data = data/baseline
