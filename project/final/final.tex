@@ -168,6 +168,15 @@ with which the program performs these loads and stores.
 
 \section{Matrix Access Pattern Analysis}
 
+\begin{figure*}[ht]
+	\centering
+	\includegraphics[scale=0.35]{images/pattern}
+	\caption{List of possible patterns for a 8x8 matrix with a given shuffling
+	function. There are 64 patterns and the column id refers to the cacheline
+	being accessed. The elements of the cacheline returned are highlighted.}
+	\label{fig:pattern}
+\end{figure*}
+
 \section{Experimental Setup}
 
 \section{Experimental Evaluation}
@@ -183,17 +192,10 @@ with which the program performs these loads and stores.
 	\includegraphics[scale=0.35]{images/128_runtime}
         \label{fig:eval_runtime}
     }
-    \caption{
-        \textbf{Performance} -- Evaluation of workload
-        	
-    }
+    \caption{\textbf{Performance -- Evaluation of workload}}
+        
     \label{fig:evaluation}
 \end{figure}
-
-
-
-
-
 
 \begin{figure*}[ht]
 	\centering
