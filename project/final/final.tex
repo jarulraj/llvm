@@ -5,12 +5,9 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage[colorlinks=false,urlcolor=blue]{hyperref}
-\usepackage{geometry}
-\geometry{margin=1in}
 \usepackage{multicol}
 \usepackage{paralist}
 \usepackage{todonotes}
-%\setlength{\marginparwidth}{2.15cm}
 \usepackage{booktabs}
 \usepackage{enumitem}
 \usepackage{cleveref}
@@ -20,6 +17,16 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows}
 \usepackage{graphicx}
+
+\usepackage{subfig}
+\DeclareCaptionType{copyrightbox}
+\captionsetup{font=small}
+\captionsetup{labelfont=bf}
+\captionsetup[subfloat]{font=scriptsize}
+\captionsetup[subfloat]{farskip=5pt}
+\captionsetup[subfloat]{captionskip=1pt}
+\captionsetup[table]{belowskip=0pt}
+
 
 
 %\DeclareMathOperator*{\argmin}{arg\,min}
@@ -38,95 +45,72 @@
   \vspace{1em}
   \textsc{\large Final Report} \\
   \vspace{3em}
-  \centerline{\large{\textbf{Group} : Joy Arulraj (\email{jarulraj}), Anuj Kalia
-  (\email{akalia})}, Jun Woo Park (\email{junwoop}) }
+  \centerline{\large{Joy Arulraj (\email{jarulraj}), Anuj Kalia
+    (\email{akalia})}, Jun Woo Park (\email{junwoop}) }
   \vspace{1em}
 \end{center}
 
-Introduction:
-What is the motivation for your work?
-(a)
-The Problem/Opportunity:
-What  problem  are  you  solving  (or  what  opportunity
-that you are attempting to exploit)?
-(b)
-Your Approach:
-What is your approach to either solving this problem or exploiting
-this opportunity?  (Don't go into a huge amount of detail yet|that will come in the
-next section; just give a thumbnail sketch at this point.)
-(c)
-Related Work:
-What have others done in the past that is related to your approach?
-(d)
-Contributions:
-What are the key technical contributions of your project?
+\section{Abstract}
 
-2.
-Details Regarding Your Design/Approach:
-Here is where you go into detail regarding
-how you solved your technical problem.  This can be multiple sections, and you need a more
-descriptive name for the section(s) than this.  If your design evolved over time, please explain
-that evolution (not just the nal design), and the reasons why it changed.
+Traditionally, when an application requests a set of different rows 
+residing on the same memory bank, the memory access latency is 
+increased due to DRAM row-buffer conflicts.
+These row-buffer conflicts can be reduced by interleaving
+consecutively addressed data locations across memory banks, so that
+the requests are spread across different banks.
+Software systems, therefore, strive hard to lay out their data structures 
+to generate access patterns that can be served efficiently by 
+the DRAM chips. 
+For instance, DBMSs targeting analytical workloads use a columnar data 
+layout so that values in the same tabular column are stored in
+consecutively addressed data locations~\cite{col1}.
 
-3.
-Experimental Setup:
-Describe the infrastructure for your experiments in enough detail so
-that others could reproduce your results.
+The design complexity of software systems can be significantly 
+reduced in future DRAM chips using novel access primitives that can 
+support both row and columnar access patterns efficiently. 
+This is feasible by appropriately laying out the data and transforming 
+the DRAM access methods.
+In this project, we focussed on automatically
+transforming the software access patterns to leverage these 
+DRAM access primitives during compilation time.
+We developed a DRAM access cost model to select the appropriate DRAM
+access primitive for different patterns. We then
+analyze the software access patterns in our compiler pass and then
+transform the code to make use of these access primitives. 
+Our evaluation of the performance impact of these transformations in 
+a matrix library showed that TODO.
 
-4.
-Experimental Evaluation:
-Show  the  results  of  your  experiments,  and  provide  detailed
-analysis of these results.  This section might start out with the overall eectiveness of your
-technique,  followed  by  various  subsections  that  examine  specic  aspects  of  your  design  in
-more detail (e.g., sensitivity analysis to various design parameters).
+\section{Introduction}
 
-5.
-Surprises and Lessons Learned:
-Were any of your results surprising our counter-intuitive?
-If so, what did you learn from those surprises?  What did you learn from this experience in
-general?
+DRAM access patterns significantly impact the performance of memory-bound
+applications. The delay incurred while handling a cache miss is not
+constant as the access latencies within DRAM are not uniform ~\cite{dram1}.
+DRAM is organized as a set of banks, each of which is made up of multiple
+chips. Consecutive memory addresses are interleaved evenly across the
+DRAM banks. Each bank has a row-buffer that is used to speed up DRAM
+accesses. When the application requests for a page in a bank, the page
+is first fetched into the bank's row buffer. Then, it can be accessed by
+the application. If the application happens to request for a page that
+is already present in the row buffer, it is termed as a row-buffer hit.
+This results in the minimal DRAM access latency. However, if the page
+is not present in the row buffer, then the appropriate row in the DRAM
+bank needs to be activated before the requested page can be loaded into 
+the row buffer and returned to the application. This is referred to as a row
+buffer miss.
 
-6.
-Conclusions and Future Work:
-Present the technical conclusions of your work (i.e. things
-that you now know that you did not know at the beginning of this study), and suggest how
-someone might build upon your work in the future (if that makes sense).
+Programmers strive hard to lay out their application data structures 
+to generate access patterns that can be served efficiently by the DRAM chips. 
+For instance, DBMSs targeting analytical workloads use a pure-columnar 
+data layout so that values stored in the same tabular column are stored 
+in consecutively addressed data locations~\cite{col1,raman13,ailamaki02}. This
+helps spread the DRAM accesses to multiple DRAM banks that can serve the requests in
+parallel. Thus, the application can better utilize the available DRAM
+bandwidth.
 
-7.
-Handing in your source code:
-Please create a tar le with the last name of at least one
-of your group members in the lename, and copy this tar le into the directory:
-/afs/cs.cmu.edu/academic/class/15745-s15/public/projects/handin
-Somewhere on in your writeup, you should also include the following:
-
-Distribution of Total Credit:
-Given that you worked in a group, how should the total credit
-for the project be distributed amongst the participants?  (e.g., 50%-50%, 60%-40%, etc.)
-
-\section{Major Changes}
-
-There are no major changes to the goals we set out in the initial report.
-We still plan to implement a compiler pass to perform data structure access pattern analysis, and
-then do a performance evaluation to identify the impact of changing the DRAM
-access pattern by using new DRAM access primitives.
-
-\section{Accomplishment So Far}
-
-\textbf{Background}: The new DRAM access primitives that we are studying in
-this project allow us to access parts of a cacheline rather than entire cachelines,
-as is the case today. The cacheline returned from a DRAM read operation is
-therefore composed of data from several cachelines, determined by choosing one
-of several ``access patterns''.
-This allows us to retrieve the required data (for instance, a column in a matrix) in fewer DRAM operations
-compared to existing access primitives. Therefore, we end up with more efficient bandwidth
-utilization and less energy consumption.
-
-We first performed an initial evaluation of the potential performance impact of this transformation.
-Specifically, we compared the time taken to compute the sum of a row and a column in a matrix laid out in
-row-major order. The results are shown in Figure~\ref{fig:perf}. We observe that summing a row is several times faster than column sum.
-Our goal is to optimize the column sum operation by first identifying the
-strided access pattern in the compiler, and then using the new DRAM access and
-layout primitives to read multiple atoms in a DRAM operation.
+For instance, we compare the time taken to compute the sum of a row and sum of a
+column in a matrix laid out in row-major order. 
+The results are shown in Figure~\ref{fig:perf}. We observe that summing a row is several times 
+faster than column sum.
 
 \begin{figure*}[ht]
 	\centering
@@ -135,6 +119,34 @@ layout primitives to read multiple atoms in a DRAM operation.
 	The dimension attribute along the x-axis refers to the $\log_2$ of the length of the two-dimensional square matrix. }
 	\label{fig:perf}
 \end{figure*}
+
+
+\subsection{The Problem}
+
+This approach, however does not work for complex workloads that have
+mixed DRAM access patterns. For instance, in a hybrid transaction and
+analytical processing (HTAP) workload~\cite{grund10}, the DBMS needs to 
+access both the tuples and columns of a table efficiently. Irrespective of
+whether the DBMS uses a pure-row or pure-columnar layout, one of the two
+access patterns will suffer from poor DRAM performance. For instance, assume
+that the DBMS uses a pure-row layout and that the tuple's size is one
+cacheline. 
+When serving an analytical query that needs to sum up the values in a
+particular column, we need to access only that part of the tuple in all the tuples in
+the table. This means that we would like to access only part of a cacheline.
+This is however not currently feasible in hardware. 
+
+In future memory systems, we expect to have new DRAM access primitives that
+allow us to access parts of a cacheline rather than entire cachelines.
+These primitives will allow the application to read a cacheline 
+composed of data actually stored in different cachelines by specifying
+an ``access pattern''.
+This allows us to retrieve the required data (for instance, a column in a matrix) 
+in fewer DRAM operations compared to existing access primitives. 
+Therefore, we can achieve more efficient DRAM bandwidth utilization 
+and less energy consumption.
+
+\subsection{Our Approach}
 
 We have implemented an LLVM compiler pass that analyses data structure access patterns.
 Currently, this targets multi-dimensional arrays of primitive data types as well as structures.
@@ -149,6 +161,59 @@ register, the SCEV pass yields an expression that represents the register's
 evolution inside the scope. When applied to the load or store address of the
 annotated data structure in the innermost loop, this gives us the stride
 with which the program performs these loads and stores.
+
+\subsection{Related Work}
+
+\subsection{Contributions}
+
+\section{Matrix Access Pattern Analysis}
+
+\section{Experimental Setup}
+
+\section{Experimental Evaluation}
+
+
+\begin{figure}[t]
+    \centering
+    \subfloat[Cache misses]{
+	\includegraphics[scale=0.35]{images/128_cache}
+        \label{fig:eval_cache}
+    } 
+    \subfloat[Runtime]{
+	\includegraphics[scale=0.35]{images/128_runtime}
+        \label{fig:eval_runtime}
+    }
+    \caption{
+        \textbf{Performance} -- Evaluation of workload
+        	
+    }
+    \label{fig:evaluation}
+\end{figure}
+
+
+
+
+
+
+\begin{figure*}[ht]
+	\centering
+	\includegraphics[scale=0.35]{images/128_cache}
+	\caption{Performance comparison of row and column oriented access patterns.
+	The dimension attribute along the x-axis refers to the $\log_2$ of the length of the two-dimensional square matrix. }
+	\label{fig:perf}
+\end{figure*}
+
+
+
+\section{Surprises and Lessons Learned}
+
+\section{Conclusions and Future Work}
+
+\section{Distribution of Total Credit}
+
+We still plan to implement a compiler pass to perform data structure access pattern analysis, and
+then do a performance evaluation to identify the impact of changing the DRAM
+access pattern by using new DRAM access primitives.
 
 The output of the compiler pass on a sample program is shown below :
 
