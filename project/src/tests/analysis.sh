@@ -33,7 +33,7 @@ do
         runtime_pattern_string="$runtime_pattern_string,${str}"
         runtime_desc_string="$runtime_desc_string,Pattern ${pattern[$i]}"
     done
-    echo python parse_cachegrind.py "${s}_runtime.png" "Runtime" $runtime_workload_string $runtime_pattern_string $runtime_desc_string
+    python parse_cachegrind.py "${s}_runtime.png" "Runtime" $runtime_workload_string $runtime_pattern_string $runtime_desc_string
     
     i=0
     missrate_workload_string="${wr[$i]}:${wr_str[$i]}:d1_read"
@@ -54,7 +54,7 @@ do
     done
 
 
- #       python parse_cachegrind.py "${s}_runtime.png" "Runtime" "$runtime_workload_string" "$runtime_pattern_string" "$runtime_desc_string"
+    python parse_cachegrind.py "${s}_runtime.png" "Runtime" "$runtime_workload_string" "$runtime_pattern_string" "$runtime_desc_string"
 
 done
 
