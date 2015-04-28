@@ -49,7 +49,7 @@ do
     do
         str="${prefix}${s}_${pattern[$i]}_"
         missrate_pattern_string="$missrate_pattern_string,${str}"
-        misstime_desc_string="$missrate_desc_string,P $i"
+        missrate_desc_string="$missrate_desc_string,P $i"
     done
 
 

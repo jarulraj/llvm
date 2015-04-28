@@ -341,7 +341,7 @@ int main (int argc, char *argv[]) {
 
     int k;
     StartTimer();
-    for(k = 0 ; k < 100; k++)
+    for(k = 0 ; k < 4; k++)
         AccessMatrix(mat, pattern_id, rd_wr_ratio, scale);
     StopTimer();
 
