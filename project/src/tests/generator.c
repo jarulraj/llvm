@@ -128,7 +128,7 @@ int AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int 
         rd_wr= ((double)rand()/(double)RAND_MAX);
 
         // WRITES
-        if(rd_wr < rd_wr_ratio) {
+        if(rd_wr > rd_wr_ratio) {
             switch(pattern_id){
                 case 0:
                     for(row_itr = 0 ; row_itr < scale ; row_itr++) {
