@@ -18,6 +18,16 @@
 \usetikzlibrary{arrows}
 \usepackage{graphicx}
 
+\usepackage{subfig}
+\DeclareCaptionType{copyrightbox}
+\captionsetup{font=small}
+\captionsetup{labelfont=bf}
+\captionsetup[subfloat]{font=scriptsize}
+\captionsetup[subfloat]{farskip=5pt}
+\captionsetup[subfloat]{captionskip=1pt}
+\captionsetup[table]{belowskip=0pt}
+
+
 
 %\DeclareMathOperator*{\argmin}{arg\,min}
 %\DeclareMathOperator*{\argmax}{arg\,max}
@@ -161,6 +171,39 @@ with which the program performs these loads and stores.
 \section{Experimental Setup}
 
 \section{Experimental Evaluation}
+
+
+\begin{figure}[t]
+    \centering
+    \subfloat[Cache misses]{
+	\includegraphics[scale=0.35]{images/128_cache}
+        \label{fig:eval_cache}
+    } 
+    \subfloat[Runtime]{
+	\includegraphics[scale=0.35]{images/128_runtime}
+        \label{fig:eval_runtime}
+    }
+    \caption{
+        \textbf{Performance} -- Evaluation of workload
+        	
+    }
+    \label{fig:evaluation}
+\end{figure}
+
+
+
+
+
+
+\begin{figure*}[ht]
+	\centering
+	\includegraphics[scale=0.35]{images/128_cache}
+	\caption{Performance comparison of row and column oriented access patterns.
+	The dimension attribute along the x-axis refers to the $\log_2$ of the length of the two-dimensional square matrix. }
+	\label{fig:perf}
+\end{figure*}
+
+
 
 \section{Surprises and Lessons Learned}
 
