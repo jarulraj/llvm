@@ -20,7 +20,9 @@ descs = sys.argv[5].split(",")
 perfs = {}
 workload_data = {}
 workload_label = {}
-for w in workloads:
+workload_names = []
+print sys.argv
+for i,w in enumerate(workloads):
     tokens = w.split(":")
     name = tokens[0]
     data = tokens[2]
@@ -28,6 +30,7 @@ for w in workloads:
     perfs[name] = {}
     workload_data[name] = data
     workload_label[name] = label
+    workload_names.append(name)
 
 for input_file_prefix in input_files:
     for w in workload_data.keys():
@@ -71,14 +74,22 @@ fig, ax = plt.subplots()
 bar_handles = []
 bar_legendhandles = []
 bar_labels = []
-for w in perfs:
+
+real_data_for_plot = []
+for w in workload_names:
     data = []
     for input_file in input_files:
         print w
         print input_file
         print workload_data[w]
         data.append(perfs[w][input_file][workload_data[w]])
+    data = np.array(data)
+    if len(real_data_for_plot):
+        data = data/ real_data_for_plot[0]
+    real_data_for_plot.append(data)
 
+for i,w in enumerate(workload_names):
+    data = real_data_for_plot[i]
     baseline = data[0]
     print data
     data = np.array(data)
