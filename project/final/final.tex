@@ -506,7 +506,6 @@ To evaluate the effectiveness of our approach, we measure the runtime performanc
   \item \textbf{Gem 5:} Gem5 simulator is a configurable simulation framework that can emulate novel DRAM access primitives. We use modified version of Gem5, that takes in pattern id from unused address bits from the prefetch instruction and emulates the access pattern. However, due to functional limitations we were not to obtain the statistics we needed for the evaluation and we decided to measure performance directly using sets of test applications.
 \end{itemize}
 
-
 \begin{table}[t]
     \centering
     \begin{tabular}{c|c}
@@ -531,7 +530,7 @@ as we assume that performance behavior of new patterns will be similar to regula
 access pattern. We use following test code for the evaluation:
 
 \begin{Verbatim}[fontsize=\small]
-void test(void * matrix, int pattern_id, int rd_wr_ratio, int scale)  {
+void test(void * matrix, int pattern_id, int rd_wr_ratio, int scale) {
     StartTimer();
     for(k = 0 ; k < repeat; k++) {
         AccessMatrix(mat, pattern_id, rd_wr_ratio, scale);
@@ -558,16 +557,17 @@ We summarize our main result in Figure~\ref{fig:evaluation}, where we report the
 with respect to the baseline (row major) pattern \textit{P0}. Among all patterns, we expect for P 7 (Columnar access) to perform most poorly as incurs most cache miss in the current architecture. 
 
  We observe that in general, all other patterns
-perform poorly in comparison to the baseline pattern, with pattern 7 (Column access pattern) showing
-the worst performance overall, as each access directly translate to cache misses. This is in line with our expectation, as the memory architecture is optimized
-for row major access pattern. 
+perform poorly in comparison to the baseline pattern. This is in line with our expectation, 
+as the memory architecture is optimized for row major access pattern and any access besides row major pattern will introduce one or more cache misses. 
 
-Furthermore, we observe that the performance degrades as the workload contains more store operations. This effect is  This is
-also expected as more write instructions increase the number of modifications to the content of the memory.
+Furthermore, we observe that the performance degrades as the workload contains more store operations. 
+This effect is also expected as more write instructions 
+increase the number of modifications to the content of the 
+memory. This will provide more opportunity for optimization under new acces primitives. 
 
 Finally we also analyze the effect of the tile size. We observe that the effects of access primites are more
 significant as we increase the tile size. This effect is more drastic for pattern 7 where the dimension of the
-tile is directly related to number of cache misses.
+tile is directly related to number of cache misses. 
 
 
 \begin{figure*}[t]
@@ -594,6 +594,11 @@ We were pleasantly surprised by the support in LLVM for analysing scalar express
 This helped reduce the complexity of the compiler pass.
 
 \section{Conclusions and Future Work}
+
+We present the compiler support for new memory architecture that provides new types of access primitives. We discussed the potential benefits and evaluated the runtime performance as we vary factors (pattern type, workload, and tile size) that affects the performance. We show that the new types of access can provide up to 5x speed up in run time. 
+
+As discuss in the report, we restrict attention to the pre-defined patterns and synthetic low level array access workload. More extensive evaluation against the realistic workload may provide more detailed analysis of the performance behavior and may pose interesting challenge for future work. 
+
 
 \section{Distribution of Total Credit}
 
