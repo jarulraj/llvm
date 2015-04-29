@@ -89,19 +89,6 @@ DRAM banks. Each bank has a row-buffer that is used to speed up DRAM
 accesses. When the application requests for a page in a bank, the page
 is first fetched into the bank's row buffer. Then, it is sent to the
 the application. If the application happens to request for a page that
-<<<<<<< HEAD
-is already present in the row buffer, it is termed as a row-buffer hit.
-This results in the minimal DRAM access latency. However, if the page
-is not present in the row buffer, then the appropriate row in the DRAM
-bank needs to be activated before the requested page can be loaded into
-the row buffer and returned to the application. This is referred to as a row
-buffer miss.
-
-Programmers strive hard to lay out their application data structures
-to generate access patterns that can be served efficiently by the DRAM chips.
-For instance, DBMSs targeting analytical workloads use a pure-columnar
-data layout so that values stored in the same tabular column are stored
-=======
 is already present in the row buffer, it is termed as a \textit{row-buffer
 hit}. This results in the minimal DRAM access latency i.e. one memory
 cycle.
@@ -114,24 +101,16 @@ Programmers strive hard to lay out their application data structures
 to generate access patterns that can be served efficiently by the DRAM chips.
 For instance, DBMSs targeting analytical workloads use a \textit{pure-columnar}
 data layout so that values present in the same tabular column are stored
->>>>>>> 7b735080a3113c0fa3c0ea4c80ac7d83038783e5
 in consecutively addressed data locations~\cite{col1,raman13,ailamaki02}. This
 helps spread the DRAM accesses to multiple DRAM banks that can serve the requests in
 parallel. Thus, the application can better utilize the available DRAM
 bandwidth.
 
-<<<<<<< HEAD
-For instance, we compare the time taken to compute the sum of a row and sum of a
-column in a matrix laid out in row-major order.
-The results are shown in Figure~\ref{fig:perf}. We observe that summing a row is several times
-faster than column sum.
-=======
 To give a concrete example, we compare the average time taken to compute the
 sum of a row and sum of a column in a matrix laid out in row-major order.
 The results are shown in ~\cref{fig:perf}.
 We observe that summing a row in this case is 2--4$\times$ faster than the
 columnar sum operation.
->>>>>>> 7b735080a3113c0fa3c0ea4c80ac7d83038783e5
 
 \begin{figure*}[ht]
 	\centering
@@ -142,39 +121,37 @@ columnar sum operation.
 	\label{fig:perf}
 \end{figure*}
 
-
 \subsection{The Problem}
 
 In this work, we focus on applications that have complex workloads with
 mixed DRAM access patterns. For instance, in a hybrid transaction and
-analytical processing (HTAP) workload~\cite{grund10}, the DBMS needs to
+analytical processing (HTAP) workload~\cite{grund10}, the DBMS needs to 
 access both the tuples and columns of a table efficiently. Irrespective of
 whether the DBMS uses a pure-row or pure-columnar layout, one of the two
-
 access patterns has to suffer from poor DRAM performance. For instance, assume
 that the DBMS uses a pure-row layout and that the size of each tuple is one
-cacheline (64 bytes).
+cacheline (64 bytes). 
 When serving an analytical query that needs to sum up the values in a
-particular column, we need to access only that part of the tuple
-in all the tuples in the table.
+particular column, we need to access only that part of the tuple 
+in all the tuples in the table. 
 This means that we would like to access only part of a cacheline.
 This is however not feasible in current hardware, as the data is laid
-out in tuple-major order.
+out in tuple-major order.  
 
 In future hardware systems, we anticipate that we will have new DRAM access
-primitives that allow us to access parts of a cacheline and not just
+primitives that allow us to access parts of a cacheline and not just 
 entire cachelines.
-These primitives will allow the application to read a cacheline
-composed of data stored in different DRAM rows by specifying
+These primitives will allow the application to read a cacheline 
+composed of data stored in different DRAM rows by specifying 
 an DRAM \textit{access pattern}. This is illustrated in ~\cref{fig:primitives}.
 Consider a 4$\times$4 toy matrix. In the default row-major layout,
 fetching the first column will require four DRAM read operations as
-they will be serialized at the same bank. If we \textit{shuffle}
+they will be serialized at the same bank. If we \textit{shuffle} 
 the tile to DRAM row mapping as shown below, we observe that we can
 access both the first row (cacheline 1) and first column (denoted by, say,
 cacheline 1.2) using a single DRAM read operation.
 This effectively allows us to retrieve the required data (for instance, a column
-in a matrix) in fewer DRAM operations compared to existing DRAM access primitives.
+in a matrix) in fewer DRAM operations compared to existing DRAM access primitives. 
 Therefore, we can achieve (1) lower DRAM latency, (2) more efficient DRAM
 bandwidth utilization, and (3) lower energy consumption.
 
@@ -187,13 +164,13 @@ bandwidth utilization, and (3) lower energy consumption.
 \end{figure*}
 
 
-The problem we address in this work involves designing a compiler pass that
+The problem we address in this work involves designing a compiler pass that 
 allows us to \textit{automatically} identify the application's access
 patterns and transforms the program to make use of these novel DRAM access
-primitives.
+primitives. 
 This reduces the burden on the programmer and thereby simplifies the adoption
 of these DRAM access primitives.
-At a high level, this involves addressing two subproblems:
+At a high level, this involves addressing two subproblems: 
 
 \begin{itemize}
   \item {Figuring out the different application access patterns}
@@ -236,10 +213,23 @@ We make the following contributions in this project:
 
 \section{Matrix Access Pattern Analysis}
 
+The goal of this analysis is to identify the different application access
+patterns and then map then onto an efficient DRAM access primitive to improve
+cache and memory subsystem performance. In this section, we will first present
+the compiler pass and then describe the DRAM access cost model that we leverage
+in our mapping function.
+
 \subsection{LLVM Pass}
 
-We still plan to implement a compiler pass to perform data structure access pattern analysis, and
-then do a performance evaluation to identify the impact of changing the DRAM
+We define an application's data structure access pattern in terms of two 
+parameters : (1) stride, and (2) offset. For instance, consider an array 
+of structures, each of which contains two integer fields. Then, if the 
+application accesses the second field in all the structures in the array
+in a loop, we denote that access pattern as $\{4,+,8\}$. Here, the first
+member is the offset and the second element is the stride.
+
+ perform data structure access pattern
+analysis, and then do a performance evaluation to identify the impact of changing the DRAM
 access pattern by using new DRAM access primitives.
 
 The output of the compiler pass on a sample program is shown below :
