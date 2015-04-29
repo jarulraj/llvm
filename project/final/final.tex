@@ -198,6 +198,18 @@ with which the program performs these loads and stores.
 
 \subsection{Contributions}
 
+We make the following contributions in this project:
+
+\begin{itemize}
+  \item {We implemented an LLVM compiler pass that determines the different data
+  structure access patterns by an application.}
+  \item {We developed a basic DRAM access cost model that allows the compiler to
+  map the application access pattern to the most optimal DRAM access pattern.}
+  \item {We illustrate the performance benefits of these novel DRAM access primitive
+  through a quantitative evaluation on different workloads in a custom matrix
+  library.}
+\end{itemize}
+
 \section{Matrix Access Pattern Analysis}
 
 \begin{figure*}[ht]
@@ -231,8 +243,6 @@ with which the program performs these loads and stores.
         
     \label{fig:evaluation}
 \end{figure*}
-
-
 
 \section{Surprises and Lessons Learned}
 
