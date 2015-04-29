@@ -361,12 +361,14 @@ write ratio defines proportion of reads and writes in the generated workload.
 \end{itemize}
 
 We summarize our main result in Figure~\ref{fig:evaluation}, where we report the normalized runtime
-with respect to the baseline (row major) pattern \textit{P0}. We observe that in general, all other patterns
-perform poorly in comparison to the baseline pattern, with pattern 7 (Column access pattern) showing
-the worst performance overall. This is in line with our expectation, as the memory architecture is optimized
-for row major access pattern.
+with respect to the baseline (row major) pattern \textit{P0}. Among all patterns, we expect for P 7 (Columnar access) to perform most poorly as incurs most cache miss in the current architecture. 
 
-Furthermore, we observe that the performance degrades as the workload contains more store operations. This is
+ We observe that in general, all other patterns
+perform poorly in comparison to the baseline pattern, with pattern 7 (Column access pattern) showing
+the worst performance overall, as each access directly translate to cache misses. This is in line with our expectation, as the memory architecture is optimized
+for row major access pattern. 
+
+Furthermore, we observe that the performance degrades as the workload contains more store operations. This effect is  This is
 also expected as more write instructions increase the number of modifications to the content of the memory.
 
 Finally we also analyze the effect of the tile size. We observe that the effects of access primites are more
