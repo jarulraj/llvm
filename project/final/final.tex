@@ -52,32 +52,32 @@
 
 \section{Abstract}
 
-Traditionally, when an application requests a set of different rows 
-residing on the same memory bank, the memory access latency is 
+Traditionally, when an application requests a set of different rows
+residing on the same memory bank, the memory access latency is
 increased due to DRAM row-buffer conflicts.
 These row-buffer conflicts can be reduced by interleaving
 consecutively addressed data locations across memory banks, so that
 the requests are spread across different banks.
-Software systems, therefore, strive hard to lay out their data structures 
-to generate access patterns that can be served efficiently by 
-the DRAM chips. 
-For instance, DBMSs targeting analytical workloads use a columnar data 
+Software systems, therefore, strive hard to lay out their data structures
+to generate access patterns that can be served efficiently by
+the DRAM chips.
+For instance, DBMSs targeting analytical workloads use a columnar data
 layout so that values in the same tabular column are stored in
 consecutively addressed data locations~\cite{col1}.
 
-The design complexity of software systems can be significantly 
-reduced in future DRAM chips using novel access primitives that can 
-support both row and columnar access patterns efficiently. 
-This is feasible by appropriately laying out the data and transforming 
+The design complexity of software systems can be significantly
+reduced in future DRAM chips using novel access primitives that can
+support both row and columnar access patterns efficiently.
+This is feasible by appropriately laying out the data and transforming
 the DRAM access methods.
 In this project, we focussed on automatically
-transforming the software access patterns to leverage these 
+transforming the software access patterns to leverage these
 DRAM access primitives during compilation time.
 We developed a DRAM access cost model to select the appropriate DRAM
 access primitive for different patterns. We then
 analyze the software access patterns in our compiler pass and then
-transform the code to make use of these access primitives. 
-Our evaluation of the performance impact of these transformations in 
+transform the code to make use of these access primitives.
+Our evaluation of the performance impact of these transformations in
 a matrix library showed that TODO.
 
 \section{Introduction}
@@ -94,22 +94,22 @@ the application. If the application happens to request for a page that
 is already present in the row buffer, it is termed as a row-buffer hit.
 This results in the minimal DRAM access latency. However, if the page
 is not present in the row buffer, then the appropriate row in the DRAM
-bank needs to be activated before the requested page can be loaded into 
+bank needs to be activated before the requested page can be loaded into
 the row buffer and returned to the application. This is referred to as a row
 buffer miss.
 
-Programmers strive hard to lay out their application data structures 
-to generate access patterns that can be served efficiently by the DRAM chips. 
-For instance, DBMSs targeting analytical workloads use a pure-columnar 
-data layout so that values stored in the same tabular column are stored 
+Programmers strive hard to lay out their application data structures
+to generate access patterns that can be served efficiently by the DRAM chips.
+For instance, DBMSs targeting analytical workloads use a pure-columnar
+data layout so that values stored in the same tabular column are stored
 in consecutively addressed data locations~\cite{col1,raman13,ailamaki02}. This
 helps spread the DRAM accesses to multiple DRAM banks that can serve the requests in
 parallel. Thus, the application can better utilize the available DRAM
 bandwidth.
 
 For instance, we compare the time taken to compute the sum of a row and sum of a
-column in a matrix laid out in row-major order. 
-The results are shown in Figure~\ref{fig:perf}. We observe that summing a row is several times 
+column in a matrix laid out in row-major order.
+The results are shown in Figure~\ref{fig:perf}. We observe that summing a row is several times
 faster than column sum.
 
 \begin{figure*}[ht]
@@ -125,25 +125,25 @@ faster than column sum.
 
 This approach, however does not work for complex workloads that have
 mixed DRAM access patterns. For instance, in a hybrid transaction and
-analytical processing (HTAP) workload~\cite{grund10}, the DBMS needs to 
+analytical processing (HTAP) workload~\cite{grund10}, the DBMS needs to
 access both the tuples and columns of a table efficiently. Irrespective of
 whether the DBMS uses a pure-row or pure-columnar layout, one of the two
 access patterns will suffer from poor DRAM performance. For instance, assume
 that the DBMS uses a pure-row layout and that the tuple's size is one
-cacheline. 
+cacheline.
 When serving an analytical query that needs to sum up the values in a
 particular column, we need to access only that part of the tuple in all the tuples in
 the table. This means that we would like to access only part of a cacheline.
-This is however not currently feasible in hardware. 
+This is however not currently feasible in hardware.
 
 In future memory systems, we expect to have new DRAM access primitives that
 allow us to access parts of a cacheline rather than entire cachelines.
-These primitives will allow the application to read a cacheline 
+These primitives will allow the application to read a cacheline
 composed of data actually stored in different cachelines by specifying
 an ``access pattern''.
-This allows us to retrieve the required data (for instance, a column in a matrix) 
-in fewer DRAM operations compared to existing access primitives. 
-Therefore, we can achieve more efficient DRAM bandwidth utilization 
+This allows us to retrieve the required data (for instance, a column in a matrix)
+in fewer DRAM operations compared to existing access primitives.
+Therefore, we can achieve more efficient DRAM bandwidth utilization
 and less energy consumption.
 
 \subsection{Our Approach}
@@ -164,28 +164,56 @@ with which the program performs these loads and stores.
 
 \subsection{Related Work}
 
+-
+
 \subsection{Contributions}
 
 \section{Matrix Access Pattern Analysis}
 
 \section{Experimental Setup}
 
+To evaluate the effectiveness of our approach, we measure the runtime performance of the application utilizing new DRAM acces primitives using a prototype.
+
+\begin{itemize}
+
+	\item \textbf{Compiler Pass:} We implemented an LLVM 3.5 compiler pass that analyses data structure access patterns. We utilize programmer annotation support to pin-point the data structrues that we wish to analyze, and make use of Scalar Evolution (SCEV) pass provided by LLVM framework to examine the access indices. We then cross reference the result with available patterns from DRAM primitives \ref{fig:pattern} to compute the pattern id that maximizes the performance.
+	\item \textbf{Gem 5:} Gem5 simulator is a configurable simulation framework that can emulate novel DRAM access primitives. We use modified version of Gem5, that takes in pattern id from unused address bits from the prefetch instruction and emulates the access pattern. However, due to functional limitations we were not to obtain the statistics we needed for the evaluation and we decided to measure performance directly using sets of test applications.
+\end{itemize}
+
+
+\begin{table}[t]
+    \centering
+    \begin{tabular}{c|c}
+	\textbf{CPU} & \\
+    \textbf{RAM} & \\
+    \textbf{HDD} & \\
+
+	\end{tabular}
+    \caption{
+        \textbf{System Specification} --
+        The specification of the system used for evaluation
+    }
+    \label{tab:spec}
+\end{table}
+
 \section{Experimental Evaluation}
 
+We evaluate effectiveness of the access primitives by comparing with the baseline performance. For the purposes of the evaluation, we assume that performance behavior of new primitives comparable to traditional row major access pattern so we use row major access pattern as the baseline for our evaluation.
+
+Our result
 
 \begin{figure}[t]
     \centering
     \subfloat[Cache misses]{
 	\includegraphics[scale=0.35]{images/128_cache}
         \label{fig:eval_cache}
-    } 
+    }
     \subfloat[Runtime]{
 	\includegraphics[scale=0.35]{images/128_runtime}
         \label{fig:eval_runtime}
     }
     \caption{
         \textbf{Performance} -- Evaluation of workload
-        	
     }
     \label{fig:evaluation}
 \end{figure}
@@ -270,7 +298,7 @@ choose the best data access and layout pattern.
 We have implemented the compiler pass that analyses our benchmark library automatically without requiring
 programmer annotations about stride and offset. However, we still need to figure out how to do
 a realistic performance evaluation. A first-order approximation of the performance impact is
-however already seen in Figure~\ref{fig:perf}. 
+however already seen in Figure~\ref{fig:perf}.
 
 \section{Surprises}
 
@@ -281,11 +309,11 @@ This helped reduce the complexity of the compiler pass.
 
 \begin{itemize}
 \item Joy Arulraj : Evaluate the performance impact of the transformations on different matrix operations.
-\item Anuj Kalia : Transform the code to use the DRAM access primitives.  
+\item Anuj Kalia : Transform the code to use the DRAM access primitives.
 \item Jun Woo Park : Examine how this transformation impacts memory level parallelism and caching behavior.
 \end{itemize}
 
-\section{Resources Needed:} 
+\section{Resources Needed:}
 
 We need some guidance on performance evaluation. We have written our own microbenchmarks and
 are using the LLVM framework to implement our proposed optimizations.
