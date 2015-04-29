@@ -201,7 +201,7 @@ with which the program performs these loads and stores.
 We make the following contributions in this project:
 
 \begin{itemize}
-  \item {We implemented an LLVM compiler pass that determines the different data
+  \item {We implemented an LLVM pass that determines the different data
   structure access patterns by an application.}
   \item {We developed a basic DRAM access cost model that allows the compiler to
   map the application access pattern to the most optimal DRAM access pattern.}
@@ -212,49 +212,18 @@ We make the following contributions in this project:
 
 \section{Matrix Access Pattern Analysis}
 
-\begin{figure*}[ht]
-	\centering
-	\includegraphics[width=\textwidth]{images/pattern}
-	\caption{List of possible patterns for a 8x8 matrix with a given shuffling
-	function. There are 64 patterns and the column id refers to the cacheline
-	being accessed. The elements of the cacheline returned are highlighted.}
-	\label{fig:pattern}
-\end{figure*}
-
-\section{Experimental Setup}
-
-\section{Experimental Evaluation}
-
-\begin{figure*}[t]
-    \centering
-    \subfloat[64$\times$64 tiles]{
-	\includegraphics[width=0.5\textwidth]{images/64_runtime}
-    } 
-    \subfloat[128$\times$128 tiless]{
-	\includegraphics[width=0.5\textwidth]{images/128_runtime}
-    }\\
-    \subfloat[256$\times$256 tiles]{
-	\includegraphics[width=0.5\textwidth]{images/256_runtime}
-    } 
-    \subfloat[512$\times$512 tiless]{
-	\includegraphics[width=0.5\textwidth]{images/512_runtime}
-    }
-    \caption{\textbf{Performance -- Evaluation of workload}}
-        
-    \label{fig:evaluation}
-\end{figure*}
-
-\section{Surprises and Lessons Learned}
-
-\section{Conclusions and Future Work}
-
-\section{Distribution of Total Credit}
+\subsection{LLVM Pass}
 
 We still plan to implement a compiler pass to perform data structure access pattern analysis, and
 then do a performance evaluation to identify the impact of changing the DRAM
 access pattern by using new DRAM access primitives.
 
 The output of the compiler pass on a sample program is shown below :
+
+We have implemented the compiler pass that analyses our benchmark library automatically without requiring
+programmer annotations about stride and offset. However, we still need to figure out how to do
+a realistic performance evaluation. A first-order approximation of the performance impact is
+however already seen in Figure~\ref{fig:perf}. 
 
 \begin{Verbatim}[fontsize=\small]
 ------------------------------
@@ -304,30 +273,48 @@ AddRec: {1,+,3}<nw><%for.cond>
 We are now figuring out how best to use this information to automatically
 choose the best data access and layout pattern.
 
-\section{Meeting Milestone}
+\subsection{DRAM Access Cost Model}
 
-We have implemented the compiler pass that analyses our benchmark library automatically without requiring
-programmer annotations about stride and offset. However, we still need to figure out how to do
-a realistic performance evaluation. A first-order approximation of the performance impact is
-however already seen in Figure~\ref{fig:perf}. 
+\begin{figure*}[ht!]
+	\centering
+	\includegraphics[width=0.9\textwidth]{images/pattern}
+	\caption{List of possible patterns for a 8x8 matrix with a given shuffling
+	function. There are 64 patterns and the column id refers to the cacheline
+	being accessed. The elements of the cacheline returned are highlighted.}
+	\label{fig:pattern}
+\end{figure*}
 
-\section{Surprises}
+\section{Experimental Setup}
+
+\section{Experimental Evaluation}
+
+\begin{figure*}[t]
+    \centering
+    \subfloat[64$\times$64 tiles]{
+	\includegraphics[width=0.5\textwidth]{images/64_runtime}
+    } 
+    \subfloat[128$\times$128 tiless]{
+	\includegraphics[width=0.5\textwidth]{images/128_runtime}
+    }\\
+    \subfloat[256$\times$256 tiles]{
+	\includegraphics[width=0.5\textwidth]{images/256_runtime}
+    } 
+    \subfloat[512$\times$512 tiless]{
+	\includegraphics[width=0.5\textwidth]{images/512_runtime}
+    }
+    \caption{\textbf{Performance -- Evaluation of workload}}
+        
+    \label{fig:evaluation}
+\end{figure*}
+
+\section{Surprises and Lessons Learned}
 
 We were pleasantly surprised by the support in LLVM for analysing scalar expressions and annotations.
 This helped reduce the complexity of the compiler pass.
 
-\section{Revised Schedule}
+\section{Conclusions and Future Work}
 
-\begin{itemize}
-\item Joy Arulraj : Evaluate the performance impact of the transformations on different matrix operations.
-\item Anuj Kalia : Transform the code to use the DRAM access primitives.  
-\item Jun Woo Park : Examine how this transformation impacts memory level parallelism and caching behavior.
-\end{itemize}
-
-\section{Resources Needed:} 
-
-We need some guidance on performance evaluation. We have written our own microbenchmarks and
-are using the LLVM framework to implement our proposed optimizations.
+\section{Distribution of Total Credit}
 
 \bibliographystyle{acm}
 \bibliography{ref}
