@@ -122,7 +122,7 @@ int AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int 
     double rd_wr;
     double sum = 0;
     int row_offset, col_offset;
-    int val = 0xFF;
+    int val = rand();
 
     for(tile_itr = 0 ; tile_itr < num_tiles ; tile_itr++) {
         int *tile = data + (tile_itr * scale * scale);
@@ -225,8 +225,9 @@ int AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int 
             switch(pattern_id){
                 case 0:
                     for(row_itr = 0 ; row_itr < scale ; row_itr++) {
-                        for(col_itr = 0 ; col_itr < scale ; col_itr++){
+                        for(col_itr = 0 ; col_itr < scale ; col_itr+=2){
                             sum += tile[row_itr*scale + col_itr];
+                            sum += tile[row_itr*scale + col_itr + 1];
                         }
                     }
                     break;
