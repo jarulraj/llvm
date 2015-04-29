@@ -734,8 +734,35 @@ choice using our DRAM access cost model in future machines wherein we have
 these novel primitives.
 
 \section{Surprises and Lessons Learned}
-We were pleasantly surprised by the support in LLVM for analysing scalar expressions and annotations.
-This helped reduce the complexity of the compiler pass.
+
+To begin with, we were pleasantly surprised by the support in LLVM for 
+analysing scalar evolution (SCEV) in loops. This helped in automatically
+identifying the application pattern (i.e. the stride and the offset).
+Initially, we were considering that the programmer might need to annotate 
+this information as well.
+However, we were able to obtain this information without any annotations and
+we could also generalize this to multi-dimensional arrays of both primitive
+data types and structures. This should cover a significant class of programs
+wherein we would like to compiler to automatically transform to make use of
+the novel DRAM access primitives.
+
+We were initially not sure about how to go about with the performance 
+evaluation as these DRAM primitives are not available on any machine. We
+tried to make use of Gem5 prototype to do a full system evaluation. However,
+this proved to be too challenging as the prototype needed more work
+that was beyond the scope of this project. Even though this turned out to 
+be not directly useful, we still got to run some interesting microbenchmarks on
+the full system simulator and appreciate the complexity of these full system
+simulators.
+
+An important lesson we learned is that the DRAM access pattern has a 
+very significant impact on the application performance. We expected to 
+observe some performance impact, but we did not anticipate that we would
+be able to obtain 2-5$\times$ speed-up out-of-the-box for the same task by
+simply altering the DRAM access pattern.
+Another interesting phase in the project was refining the cost model over time,
+from a simple mapping function to one that takes all the available 
+DRAM access primitives as well as the data alignment into consideration.
 
 \section{Conclusions and Future Work}
 
