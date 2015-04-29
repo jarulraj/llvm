@@ -8,15 +8,15 @@ scale=${2}
 for s in ${scale[@]}
 do
 
-    for p in ${pattern[@]}
-    do 
-        for w in ${wr[@]}
-        do 
-            echo ${p} $w ${s}
-            ./generator ${p} $w ${s} 4 > ${prefix}${s}_${p}_runtime_$w
-            valgrind --tool=cachegrind ./generator ${p} $w ${s} 1  > ${prefix}${s}_${p}_$w 2>&1
-        done
-    done
+    #for p in ${pattern[@]}
+    #do 
+    #    for w in ${wr[@]}
+    #    do 
+    #        echo ${p} $w ${s}
+    #        ./generator ${p} $w ${s} 4 > ${prefix}${s}_${p}_runtime_$w
+    #        valgrind --tool=cachegrind ./generator ${p} $w ${s} 1  > ${prefix}${s}_${p}_$w 2>&1
+    #    done
+    #done
     i=0
     runtime_workload_string="${wr[$i]}:${wr_str[$i]}:runtime"
     echo $runtime_workload_string
@@ -37,10 +37,10 @@ do
     python parse_cachegrind.py "${s}_runtime.png" "Runtime" "$runtime_workload_string" "$runtime_pattern_string" "$runtime_desc_string"
     
     i=0
-    missrate_workload_string="${wr[$i]}:${wr_str[$i]}:d1_read"
+    missrate_workload_string="${wr[$i]}:${wr_str[$i]}:d1_overall_miss"
     for ((i=1;i<${#wr[@]};i++))
     do
-        str="${wr[$i]}:${wr_str[$i]}:d1_overall"
+        str="${wr[$i]}:${wr_str[$i]}:d1_overall_miss"
         missrate_workload_string="$missrate_workload_string,${str}"
     done
     i=0
