@@ -126,8 +126,9 @@ access primitive for different patterns. We then
 analyze the software access patterns in our compiler pass and then
 transform the code to make use of these access primitives.
 Our evaluation of the performance impact of these transformations in
-a matrix library showed that TODO.
-
+a matrix library showed that we can realize 2-5$\times$ speed-up 
+out-of-the-box for the same tasks by choosing the optimal DRAM 
+access pattern.
 \section{Introduction}
 
 DRAM access patterns significantly impact the performance of memory-bound
@@ -260,16 +261,16 @@ traditional tuple-at-a-time Volcano pipelining model.
 We make the following contributions in this project:
 
 \begin{itemize}
-  \item {We implemented an LLVM pass that determines the different data
-  structure access patterns by an application.}
-  \item {We developed a basic DRAM access cost model that allows the compiler to
-  map the application access pattern to the most optimal DRAM access pattern.}
+  \item {We implemented an LLVM pass that automatically determines the different
+  data structure access patterns by an application.}
+  \item {We developed a weighted DRAM access cost model that allows the compiler
+  to map the application access pattern to the most optimal DRAM access
+  primitive.}
   \item {We illustrate the performance benefits of these novel DRAM access primitive
-  through a quantitative evaluation on different workloads in a custom matrix
-  library.}
+  through a quantitative evaluation on a matrix library.}
 \end{itemize}
 
-\section{Matrix Access Pattern Analysis}
+\section{Memory Access Pattern Analysis}
 
 The goal of this analysis is to identify the different application access
 patterns and then map then onto an efficient DRAM access primitive to improve
@@ -295,16 +296,17 @@ In theory, we can apply our analysis on all loads and stores in the program.
 However, we wanted to restrict our analysis to important data structures
 as that approach is more practical.
 Further, we also focus only on memory accesses within \textit{loops} in the 
-application. This is because we believe that optimizing these memory accesses
+application. This is because we expect that optimizing these memory accesses
 with the novel DRAM access primitives will be sufficient to realize
 significant application speedups.
-
 This compiler pass consists of three stages :
+
 \begin{itemize}
   \item{We first parse the programmer annotations to determine the critical data
   structures.}
   \item{Then, for each loop in the program, we analyze the loads and
-  stores associated with these data structures to determine the access pattern.}
+  stores associated with these data structures to determine the access
+  patterns.}
   \item{Finally, we use the cost model to map the access pattern to the
   relevant DRAM access primitive.}
 \end{itemize}
@@ -317,8 +319,8 @@ help recognize general induction variables.
 Given a program \textit{scope} and a register, we can use these functions to
 obtain an expression that represents the register's evolution inside the scope.
 We applied these functions to the load and store addresses of the annotated 
-data structure within the scope of the innermost loop. We then parsed the
-recursive expression and delinearized it to obtain the stride and offset
+data structure within the scope of the innermost loop. We then parsed
+the recursive expression and delinearized it to obtain the stride and offset
 with which the application accesses the critical data structures in the loop.
 
 The output of the compiler pass on a sample program is shown below :
@@ -413,7 +415,7 @@ Access Pattern :
 \end{lstlisting}
 
 In the listing above, we observe that our pass can handle multi-dimensional
-arrays of both primitive and aggregate data types. It can clearly distinguish
+arrays of both primitive and aggregate data types. It can distinguish
 the row-oriented and colum-oriented access patterns \texttt{A[i][j]} and 
 \texttt{A[j][i]}. In the former case, the access pattern is of the form :\\
   
@@ -425,9 +427,10 @@ patterns, wherein the order of the for-loop conditions are inverted in the
 two cases.
 
 Similary, in the case of the array of structures, the offset of the first
-and second character fields within the structure are distinguished. This is
-evident in the \texttt{\{0,+,3\}<nuw><nsw><\%for.cond>} and
-\texttt{\{1,+,3\}<nw><\%for.cond>} access patterns. 
+and second character fields within the structure are identified in the access
+pattern.
+This is evident in the expressions \texttt{\{0,+,3\}<nuw><nsw><\%for.cond>} and
+\texttt{\{1,+,3\}<nw><\%for.cond>}. 
 We have successfully tested our compiler pass on more complex access patterns. 
 Overall, we can effectively analyze the loads and stores associated with the
 critical data structures using the pass.
@@ -447,8 +450,8 @@ critical data structures using the pass.
 We now describe the cost model we developed to help us map the
 application's access patterns to the relevant DRAM access primitive.
 To begin with, consider the list of possible patterns for 8$\times$8 
-toy matrix with a given shuffling function shown in~\cref{fig:pattern}. 
-We observe that there are $64$ total DRAM access patterns. 
+toy matrix with a given shuffling function, shown in~\cref{fig:pattern}. 
+We observe that there are $8$ different DRAM access patterns. 
 In each case, the \textit{column id} refers to the cacheline being accessed,
 while the \textit{pattern id} is the auxiliary information that we can 
 supply using the novel DRAM access primitives.
@@ -478,7 +481,7 @@ other access patterns ranging from $1$ through $6$.
 In this model, for a given data structure, we first analyse all the cell
 elements accessed by the set of all patterns in the loop. This is done
 using the analysis described in previous subsection. We then compute
-the difference between that tile and each of the available access patterns.
+the difference between that tile and each of the available DRAM access patterns.
 For instance, say the hybrid access pattern for the data structure looks
 like this :
 
@@ -533,7 +536,7 @@ element is set to one, i.e.
 \[
 \mathcal{V}_{a}[i] =
 \begin{cases}
-1 , & \text{if } \sum_{j=1}^{n} \mathcal{T}_{a}[i][j] > 0 \\
+1 , & \text{if } \sum_{j=1}^{m} \mathcal{T}_{a}[i][j] > 0 \\
 0 , & \text{otherwise} 
 \end{cases}
 \]
@@ -544,8 +547,8 @@ $$\text{Data Alignment Cost}(\mathcal{T}_{a}, \mathcal{T}_{b}) = \sum_{i=1}^{n}
 | \mathcal{V}_{a}[i][j] - \mathcal{V}_{b}[i][j] |$$
 
 This refined model works well for cacheline alignment. However, we will need to
-resolve ties between access primitives that have the same data aligment cost but
-may not be equally good fits for the hybrid access pattern.
+resolve ties between access primitives that have the same data aligment cost,
+but may not be equally good fits for the hybrid access pattern.
 We therefore take both the basic cost and data alignment cost into consideration
 to figure out the ideal access primitive for a given hybrid access pattern.
 This is defined as :
@@ -570,7 +573,7 @@ primitive.
 3.5 framework. The pass analyses the application's data structure access
 patterns with the help of scalar evolution-related (SCEV)
 functions~\cite{llvm15}. 
-We then use the cost model to find the optimal DRAM access primitive 
+It then uses the cost model to find the optimal DRAM access primitive 
 among the ones shown in~\cref{fig:pattern} for the given hybrid data access
 pattern.
 
@@ -616,9 +619,11 @@ The changes in Gem5 are being made in tandem with this work. Due to functional
 limitations of the current prototype, we were not able to obtain the statistics 
 required for evaluating our benchmarks. 
 We therefore decided to estimate the performance benefits directly on real
-hardware using a matrix library that emulates different DRAM access primitives.
+hardware using a matrix library by emulating the different DRAM access
+primitives.
 The specifications of the system that we used in our evaluation is shown
-in~\cref{tab:spec}.
+in~\cref{tab:spec}. The source code of this project is available
+here~\cite{source15}.
 
 \begin{table}
     \centering
@@ -642,9 +647,9 @@ in~\cref{tab:spec}.
 We evaluate potential performance impact of the novel DRAM access primitives by
 comparing the time taken to complete the \textit{same task} using different
 \textit{DRAM patterns ids} in our custom matrix library. 
-The task involves performing a long series of reads and writes in a large array
-at the tile-level granularity. We have a knob that allows us to adjust the
-read-write ratio.
+The task involves performing a long series of reads and writes in a wide
+single-dimensional array at the \textit{tile-level granularity}. We have a knob
+that allows us to adjust the read-write ratio.
 We then compare the performance obtained using different access patterns 
 in the system after normalizing them with respect to the default pattern id $0$.
 
@@ -672,7 +677,7 @@ We vary the following parameters in our experiments :
   \item \textbf{Workload:} We consider four workloads (Read only, Read heavy,
 Balanced, and Write Heavy) with the corresponding read-write ratio being 0,
 0.25, 0.5, and 0.75 respectively. The \textit{AccessMatrix} function reads and writes
-cells in different tiles of the matrix using the given pattern id based on the
+cells in different tiles of the matrix using the given pattern id, based on the
 read-write ratio in the generated workload.
   \item \textbf{Tile size:} This is the dimension of the square pattern matrix. 
   We considered the following values - 64, 128, 256, and 512.
@@ -706,7 +711,7 @@ be ideally suited for the baseline DRAM access primitive.
     \label{fig:evaluation}
 \end{figure*}
 
-The main takeaway was that the choice of DRAM access pattern has a strong
+The main takeaway is that the choice of DRAM access pattern has a strong
 performance impact on the workload. In general, we observed that the other
 DRAM access primitives performed worser than the baseline access pattern
 on the task, to different extents.
@@ -720,18 +725,18 @@ pronounced in case of the write-intensive workloads (Balanced and Write-Heavy).
 We attribute this to the fact that write operations will need to 
 fetch the data and also write back the modifed contents back to memory,
 unlike the read operations. This increases the number of row-buffer
-conflicts and increases the sensitivity to the choice of the DRAM access pattern
+conflicts and the sensitivity to the choice of the DRAM access pattern
 primitive.
 
-Finally we examined the impact of the tile size. We observed that the effects of
-access primitives are more significant with larger tile size. 
+Finally, we examined the impact of the tile size. We observed that the effects
+of access primitives are more significant with larger tiles. 
 This effect is prominently visible particulary for pattern id 7, wherein the
 dimension of the tile is directly related to number of cache misses incurred.
 Overall, we expect that depending on the hybrid application access pattern,
 the choice of DRAM access primitive will have a significant performance impact.
 Hence, there is a significant opportunity for the compiler to optimize this
-choice using our DRAM access cost model in future machines wherein we have
-these novel primitives.
+choice using our weighted DRAM access cost model, on future machines wherein we
+have these novel primitives.
 
 \section{Surprises and Lessons Learned}
 
@@ -743,17 +748,17 @@ this information as well.
 However, we were able to obtain this information without any annotations and
 we could also generalize this to multi-dimensional arrays of both primitive
 data types and structures. This should cover a significant class of programs
-wherein we would like to compiler to automatically transform to make use of
-the novel DRAM access primitives.
+wherein we would like the compiler to automatically transform the program
+to make use of the novel DRAM access primitives.
 
 We were initially not sure about how to go about with the performance 
 evaluation as these DRAM primitives are not available on any machine. We
-tried to make use of Gem5 prototype to do a full system evaluation. However,
+tried to make use of the Gem5 prototype to do a full system evaluation. However,
 this proved to be too challenging as the prototype needed more work
 that was beyond the scope of this project. Even though this turned out to 
-be not directly useful, we still got to run some interesting microbenchmarks on
-the full system simulator and appreciate the complexity of these full system
-simulators.
+not be directly useful, we still got to run some interesting microbenchmarks on
+the full system simulator and got to appreciate the complexity of the full
+system simulator.
 
 An important lesson we learned is that the DRAM access pattern has a 
 very significant impact on the application performance. We expected to 
@@ -772,7 +777,7 @@ primitives using a cost model.
 We examined the potential benefits of this optimization in our evaluation,
 wherein we varied the pattern type, workload, and tile size to observe the
 impact on runtime performance.
-Our evaluation showed that choosing these DRAM access primitives for
+Our evaluation showed that choosing the right DRAM access primitive for
 the required task using a cost model can provide 2-5$\times$ speed-up.
 
 In this work, we restricted our analysis to the canonical DRAM access patterns
