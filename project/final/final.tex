@@ -220,32 +220,40 @@ patterns and transforms the program to make use of these novel DRAM access
 primitives.
 This reduces the burden on the programmer and thereby simplifies the adoption
 of these DRAM access primitives.
-At a high level, this involves addressing two subproblems:
-
-\begin{itemize}
-  \item {Figuring out the different application access patterns}
-  \item {Mapping the access patterns to make use of underlying DRAM access primitives.}
-\end{itemize}
 
 \subsection{Our Approach}
 
-We have implemented an LLVM compiler pass that analyses data structure access patterns.
-Currently, this targets multi-dimensional arrays of primitive data types as well as structures.
-We assume that the programmer has annotated the data structures that should be
-analysed using LLVM annotations.
-We could apply the analysis on all loads and stores, but we wanted to restrict our
-analysis to important data structures that are accessed several times in loops.
-In the first stage of the pass, we parse the annotations to determine these data structures.
-Then, for each loop within a function, we analyze loads and stores to these
-data structures using LLVM's Scalar Evolution (SCEV) pass. Given a scope and a
-register, the SCEV pass yields an expression that represents the register's
-evolution inside the scope. When applied to the load or store address of the
-annotated data structure in the innermost loop, this gives us the stride
-with which the program performs these loads and stores.
+At a high level, we decouple the problem into two subproblems:
+
+\begin{itemize}
+  \item {We need to figure out the different application access patterns}
+  \item {We then need to map the application access patterns to make use of
+  underlying DRAM access primitives.}
+\end{itemize}
+
+We have implemented an LLVM pass that analyses data structure access patterns
+and uses a DRAM access cost model to map the access pattern to an optimal DRAM
+access primitive.
+Our pass can successfully handle arbitrary data structure access patterns
+over multi-dimensional arrays of primitive data types as well as structures.
 
 \subsection{Related Work}
 
--
+We have gone through several traditional papers on DRAM access
+primitives and data locality~\cite{dram1,dram2,dram3}.
+As the DRAM primitives we are targeting in this work are not currently
+available, we could not find more relevant literature.
+However, there has been a lot of prior work on handling hybrid application
+patterns with existing hardware constraints, particularly in the
+area of database systems.
+Copeland et. al.~\cite{Copeland85} presented the advantages of a storage model
+based on decomposition over conventional row-oriented storage models.
+More recently, HYRISE~\cite{grund10} and MonetDB/X100~\cite{monetdb} systems 
+have been designed to handle hybrid and analytical query workloads respectively
+on existing memory subsystems.
+In particular, the X100 engine~\cite{Zukowski05} introduced in-cache vectorized 
+processing to balance between the column-at-a-time execution in MonetDB and the
+traditional tuple-at-a-time Volcano pipelining model.
 
 \subsection{Contributions}
 
@@ -629,8 +637,7 @@ Finally we also analyze the effect of the tile size. We observe that the effects
 significant as we increase the tile size. This effect is more drastic for pattern 7 where the dimension of the
 tile is directly related to number of cache misses. 
 
-
-\begin{figure*}[t]
+\begin{figure*}[ht!]
     \centering
     \subfloat[64$\times$64 tiles]{
 	\includegraphics[width=0.5\textwidth]{images/64_runtime}
