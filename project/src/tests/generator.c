@@ -133,7 +133,7 @@ int AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int 
                 case 0:
                     for(row_itr = 0 ; row_itr < scale ; row_itr++) {
                         for(col_itr = 0 ; col_itr < scale ; col_itr++){
-                            tile[row_itr*8 + col_itr] = 1;
+                            tile[row_itr*scale + col_itr] = 1;
                         }
                     }
                     break;
@@ -205,9 +205,9 @@ int AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int 
                     break;
 
                 case 7:
-                    for(row_itr = 0 ; row_itr < scale ; row_itr++) {
-                        for(col_itr = 0 ; col_itr < scale ; col_itr++){
-                            tile[col_itr*8 + row_itr] = 1;
+                    for(col_itr = 0 ; col_itr < scale ; col_itr++){
+                        for(row_itr = 0 ; row_itr < scale ; row_itr++) {
+                            tile[row_itr*scale + col_itr] = 1;
                         }
                     }
                     break;
@@ -297,9 +297,9 @@ int AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int 
                     break;
 
                 case 7:
-                    for(row_itr = 0 ; row_itr < scale ; row_itr++) {
-                        for(col_itr = 0 ; col_itr < scale ; col_itr++){
-                            sum += tile[col_itr*scale + row_itr];
+                    for(col_itr = 0 ; col_itr < scale ; col_itr++){
+                        for(row_itr = 0 ; row_itr < scale ; row_itr++) {
+                            sum += tile[row_itr*scale + col_itr];
                         }
                     }
                     break;
@@ -344,10 +344,10 @@ int main (int argc, char *argv[]) {
     int sum = 0;
 
     StartTimer();
-    for(k = 0 ; k < 4; k++) {
+    for(k = 0 ; k < 1; k++) {
         sum += AccessMatrix(mat, pattern_id, rd_wr_ratio, scale);
     }
     StopTimer();
-
+    
     return sum;
 }
