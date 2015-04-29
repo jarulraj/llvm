@@ -323,8 +323,8 @@ int main (int argc, char *argv[]) {
 
     struct Matrix *mat;
 
-    if(argc != 4){
-        fprintf(stderr, "Usage :: ./generator <pattern_id (0-7)> <rd-wr ratio (0-1)> scale\n");
+    if(argc != 5){
+        fprintf(stderr, "Usage :: ./generator <pattern_id (0-7)> <rd-wr ratio (0-1)> scale repeat\n");
         return -1;
     }
 
@@ -337,6 +337,7 @@ int main (int argc, char *argv[]) {
     int pattern_id = atoi(argv[1]);
     double rd_wr_ratio = atof(argv[2]);
     int scale = atoi(argv[3]);
+    int k_thres = atoi(argv[4]);
 
     fprintf(stdout, "pattern id : %d rd_wr ratio : %.2f \n", pattern_id, rd_wr_ratio);
 
@@ -344,7 +345,7 @@ int main (int argc, char *argv[]) {
     int sum = 0;
 
     StartTimer();
-    for(k = 0 ; k < 4; k++) {
+    for(k = 0 ; k < k_thres; k++) {
         sum += AccessMatrix(mat, pattern_id, rd_wr_ratio, scale);
     }
     StopTimer();
