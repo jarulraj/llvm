@@ -12,3 +12,5 @@ hello
 m5out
 build
 generator
+cachegrind*
+figure*

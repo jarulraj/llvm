@@ -39,6 +39,7 @@ for input_file_prefix in input_files:
             perfs[w][input_file_prefix] = {}
             print "w=%s input=%s\n" % (w, input_file_prefix)
             for line in f:
+                line = line.replace(",", "")
                 if re.match('.+D1  miss rate:\W+(\d+.\d+)\W+\(\W+(\d+.\d+)\%\W+\+\W+(\d+.\d+).+', line):
                     tokens = re.split('.+D1  miss rate:\W+(\d+.\d+)\W+\(\W+(\d+.\d+)\%\W+\+\W+(\d+.\d+).+', line)
                     perfs[w][input_file_prefix]['d1_overall'] = float(tokens[1])
@@ -50,10 +51,24 @@ for input_file_prefix in input_files:
                     perfs[w][input_file_prefix]['lld_overall'] = float(tokens[1])
                     perfs[w][input_file_prefix]['lld_read'] = float(tokens[2])
                     perfs[w][input_file_prefix]['lld_write'] = float(tokens[3])
+                elif re.match('.+D1\W+misses:\W+(\d+)\W+\(\W*(\d+) rd\W+\+\W+(\d+).+', line):
+                    tokens = re.split('.+D1\W+misses:\W+(\d+)\W+\(\W*(\d+) rd\W+\+\W+(\d+).+', line)
+                    perfs[w][input_file_prefix]['d1_overall_miss'] = float(tokens[1])
+                    perfs[w][input_file_prefix]['d1_read_miss']= float(tokens[2])
+                    perfs[w][input_file_prefix]['d1_write_miss'] = float(tokens[3])
+                elif re.match('.+LLd misses:\W+(\d+)\W*\(\W+(\d+) rd\W+\+\W+(\d+).+', line):
+                    tokens = re.split('.+LLd misses:\W+(\d+)\W+\(\W+(\d+) rd\W+\+\W+(\d+).+', line)
+                    print tokens
+                    perfs[w][input_file_prefix]['lld_overall_miss'] = float(tokens[1])
+                    perfs[w][input_file_prefix]['lld_read_miss'] = float(tokens[2])
+                    perfs[w][input_file_prefix]['lld_write_miss'] = float(tokens[3])
+
                 elif re.match('Duration :: (\d+.\d+).+', line):
                     tokens = re.split('Duration :: (\d+.\d+).+', line)[1]
                     print tokens
                     perfs[w][input_file_prefix]['runtime'] = float(tokens)
+                else:
+                    print line
 
 print perfs
 
@@ -89,10 +104,9 @@ for w in workload_names:
     real_data_for_plot.append(data)
 
 print real_data_for_plot
-sys.exit(0)
 for i,w in enumerate(workload_names):
     data = real_data_for_plot[i]
-    baseline = real_data_for_plot[0][0]
+    baseline = data[0]
     print data
     data = np.array(data)
     data = data/baseline
