@@ -17,6 +17,8 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows}
 \usepackage{graphicx}
+\usepackage{listings}
+\usepackage{color}
 
 \usepackage{subfig}
 \DeclareCaptionType{copyrightbox}
@@ -27,8 +29,35 @@
 \captionsetup[subfloat]{captionskip=1pt}
 \captionsetup[table]{belowskip=0pt}
 
+\crefname{listing}{Program-code}{Program-codes}  
+\Crefname{listing}{Program-code}{Program-codes}
+
 %\DeclareMathOperator*{\argmin}{arg\,min}
 %\DeclareMathOperator*{\argmax}{arg\,max}
+
+\lstdefinestyle{customc}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  xleftmargin=\parindent,
+  language=C,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\bfseries\color{green!40!black},
+  commentstyle=\itshape\color{purple!40!black},
+  identifierstyle=\color{blue},
+  stringstyle=\color{orange},
+}
+
+\lstdefinestyle{customasm}{
+  belowcaptionskip=1\baselineskip,
+  frame=L,
+  xleftmargin=\parindent,
+  language=[x86masm]Assembler,
+  basicstyle=\footnotesize\ttfamily,
+  commentstyle=\itshape\color{purple!40!black},
+}
+
+\lstset{escapechar=@,style=customc}
 
 \newcommand{\email}[1]{\href{mailto:#1@cs.cmu.edu}{#1}}
 
@@ -222,35 +251,64 @@ in our mapping function.
 \subsection{LLVM Pass}
 
 We define an application's data structure access pattern in terms of two 
-parameters : (1) stride, and (2) offset. For instance, consider an array 
-of structures, each of which contains two integer fields. Then, if the 
-application accesses the second field in all the structures in the array
-in a loop, we denote that access pattern as $\{4,+,8\}$. Here, the first
-member is the offset and the second element is the stride.
+parameters : (1) \textit{stride}, and (2) \textit{offset}. 
+For instance, consider an array of structures, each of which contains two
+integer fields. 
+Then, if the application accesses the second field in all the structures 
+in the array in a loop, we denote that access pattern as $\{4,+,8\}$. 
+Here, the first member is the offset and the second element is the stride.
 
- perform data structure access pattern
-analysis, and then do a performance evaluation to identify the impact of changing the DRAM
-access pattern by using new DRAM access primitives.
+We implemented a compiler pass that analyses our matrix library automatically
+to determine the stride and offset of the application's access patterns.
+We assume that the programmer annotates the data structures that should
+be analysed using LLVM annotations.
+In theory, we can apply our analysis on all loads and stores in the program.
+However, we wanted to restrict our analysis to important data structures
+as that approach is more practical.
+Further, we also focus only on memory accesses within \textit{loops} in the 
+application. This is because we believe that optimizing these memory accesses
+with the novel DRAM access primitives will be sufficient to realize
+significant application speedups.
+
+This compiler pass consists of three stages :
+\begin{itemize}
+  \item{We first parse the programmer annotations to determine the critical data
+  structures.}
+  \item{Then, for each loop in the program, we analyze the loads and
+  stores associated with these data structures to determine the access pattern.}
+  \item{Finally, we use the cost model to map the access pattern to the
+  relevant DRAM access primitive.}
+\end{itemize}
+
+We implemented the first stage using LLVM's support for data member annotations.
+Then, we leveraged the scalar evolution (SCEV) analysis~\cite{llvm15} functions
+in the second stage of the compiler pass.
+These functions support the analysis of scalar expressions within loops and
+help recognize general induction variables.
+Given a program \textit{scope} and a register, we can use these functions to
+obtain an expression that represents the register's evolution inside the scope.
+We applied these functions to the load and store addresses of the annotated 
+data structure within the scope of the innermost loop. We then parsed the
+recursive expression and delinearized it to obtain the stride and offset
+with which the application accesses the critical data structures in the loop.
 
 The output of the compiler pass on a sample program is shown below :
 
-We have implemented the compiler pass that analyses our benchmark library automatically without requiring
-programmer annotations about stride and offset. However, we still need to figure out how to do
-a realistic performance evaluation. A first-order approximation of the performance impact is
-however already seen in Figure~\ref{fig:perf}.
+\begin{lstlisting}[caption={Sample Input Program},label={lst:input}]
 
-\begin{Verbatim}[fontsize=\small]
-------------------------------
-INPUT :
-------------------------------
+------------------------------------------------------------
+INPUT PROGRAM
+------------------------------------------------------------
+
 void foo(long n, long m)  {
-  __attribute__((annotate(``hey, this is important''))) int A[n][m];
+  __attribute__((annotate(``this is important''))) int A[n][m];
+  
   struct key{
     char a;
     char b;
     char c;
   };
-  __attribute__((annotate(``hey, keys''))) struct key keys[100];
+  __attribute__((annotate(``critical''))) struct key keys[100];
 
   char x;
   for (long i = 0; i < n; i++) {
@@ -262,45 +320,115 @@ void foo(long n, long m)  {
     }
   }
 }
-------------------------------
-OUTPUT :
-------------------------------
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Analysis Output},label={lst:output}]
+
+------------------------------------------------------------
+ANALYSIS OUTPUT :
+------------------------------------------------------------
+
+
 Analysing function :: foo:
-tests/a.c:i32 5           %vla = alloca i32, i32 %1, align 4    hey, this is important
-tests/a.c:i32 13          %keys = alloca [100 x %struct.key], align 1   hey, keys
 
-Inst:   store i32 0, i32* %arrayidx6, align 4
-AddRec: {{0,+,(4 * %m)}<%for.cond>,+,4}<nw><%for.cond3>
-ArrayRef[{0,+,1}<nuw><nsw><%for.cond>][{0,+,1}<nuw><nsw><%for.cond3>]
+------------------------------
+Annotations found :
+------------------------------
 
-Inst:   store i32 0, i32* %arrayidx8, align 4
-AddRec: {{0,+,4}<nuw><nsw><%for.cond>,+,(4 * %m)}<%for.cond3>
-ArrayRef[{0,+,1}<nuw><nsw><%for.cond3>][{0,+,1}<nuw><nsw><%for.cond>]
+tests/a.c:i32 5           
+%vla = alloca i32, i32 %1, align 4    
+this is important
 
-Inst:   %4 = load i8* %a, align 1
-AddRec: {0,+,3}<nuw><nsw><%for.cond>
+tests/a.c:i32 13          
+%keys = alloca [100 x %struct.key], align 1   
+critical
 
-Inst:   store i8 %4, i8* %b, align 1
-AddRec: {1,+,3}<nw><%for.cond>
-\end{Verbatim}
+------------------------------
+Loads/Stores :
+------------------------------
 
-We are now figuring out how best to use this information to automatically
-choose the best data access and layout pattern.
+------------------------------
+Instruction:   store i32 0, i32* %arrayidx6, align 4
+------------------------------
+
+Access Pattern :
+{{0,+,(4 * %m)}<%for.cond>,+,4}<nw><%for.cond3>
+
+Delinearized Access Pattern :
+[{0,+,1}<nuw><nsw><%for.cond>][{0,+,1}<nuw><nsw><%for.cond3>]
+
+------------------------------
+Instruction:   store i32 0, i32* %arrayidx8, align 4
+------------------------------
+
+Access Pattern :
+{{0,+,4}<nuw><nsw><%for.cond>,+,(4 * %m)}<%for.cond3>
+
+Delinearized Access Pattern :
+[{0,+,1}<nuw><nsw><%for.cond3>][{0,+,1}<nuw><nsw><%for.cond>]
+
+------------------------------
+Instruction:   %4 = load i8* %a, align 1
+------------------------------
+
+Access Pattern :
+{0,+,3}<nuw><nsw><%for.cond>
+
+------------------------------
+Instruction:   store i8 %4, i8* %b, align 1
+------------------------------
+
+Access Pattern :
+{1,+,3}<nw><%for.cond>
+
+\end{lstlisting}
+
+In the listing above, we observe that our pass can handle multi-dimensional
+arrays of both primitive and aggregate data types. It can clearly distinguish
+the row-oriented and colum-oriented access patterns \texttt{A[i][j]} and 
+\texttt{A[j][i]}. In the former case, the access pattern is of the form :\\
+  
+\texttt{\{\{0,+,(4 * \%m)\}<\%for.cond>,+,4\}<nw><\%for.cond3>},\\
+
+i.e. the accesses are row-oriented. In the latter case, the stride is larger and
+the accesses are column-oriented. This is even more evident from the delinearized access
+patterns, wherein the order of the for-loop conditions are inverted in the
+two cases.
+
+Similary, in the case of the array of structures, the offset of the first
+and second character fields within the structure are distinguished. This is
+evident in the \texttt{\{0,+,3\}<nuw><nsw><\%for.cond>} and
+\texttt{\{1,+,3\}<nw><\%for.cond>} access patterns. 
+We have successfully tested our compiler pass on more complex access patterns. 
+Overall, we can effectively analyze the loads and stores associated with the
+critical data structures using the pass.
 
 \subsection{DRAM Access Cost Model}
 
-We have implemented the compiler pass that analyses our benchmark library automatically without requiring
-programmer annotations about stride and offset. However, we still need to figure out how to do
-a realistic performance evaluation. A first-order approximation of the performance impact is
-however already seen in Figure~\ref{fig:perf}.
 \begin{figure*}[ht!]
 	\centering
 	\includegraphics[width=0.9\textwidth]{images/pattern}
-	\caption{List of possible patterns for a 8x8 matrix with a given shuffling
-	function. There are 64 patterns and the column id refers to the cacheline
-	being accessed. The elements of the cacheline returned are highlighted.}
+	\caption{List of possible patterns for a 8$\times$8 matrix with a given
+	shuffling function. The column id refers to the cacheline being accessed. 
+	The elements of the cacheline that are highlighted are returned to the
+	application.}
 	\label{fig:pattern}
 \end{figure*}
+
+We now describe the cost model we developed to help us map the
+application's access patterns to the relevant DRAM access primitive.
+To begin with, consider the list of possible patterns for 8$\times$8 
+toy matrix with a given shuffling function shown in~\cref{fig:pattern}. 
+We observe that there are $64$ total DRAM access patterns. 
+In each case, the \textit{column id} refers to the cacheline being accessed,
+while the \textit{pattern id} is the auxiliary information that we can 
+supply using the novel DRAM access primitives.
+
+The elements of the cacheline that are highlighted will be returned to the 
+application that is requesting the desired cacheline and pattern id.
+We first note that using this tile to DRAM row mapping, we can access both
+the first row and first column in the matrix in a single DRAM read operation.
+
 
 \section{Experimental Setup}
 
