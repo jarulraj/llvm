@@ -154,33 +154,33 @@ columnar sum operation.
 
 In this work, we focus on applications that have complex workloads with
 mixed DRAM access patterns. For instance, in a hybrid transaction and
-analytical processing (HTAP) workload~\cite{grund10}, the DBMS needs to 
+analytical processing (HTAP) workload~\cite{grund10}, the DBMS needs to
 access both the tuples and columns of a table efficiently. Irrespective of
 whether the DBMS uses a pure-row or pure-columnar layout, one of the two
 access patterns has to suffer from poor DRAM performance. For instance, assume
 that the DBMS uses a pure-row layout and that the size of each tuple is one
-cacheline (64 bytes). 
+cacheline (64 bytes).
 When serving an analytical query that needs to sum up the values in a
-particular column, we need to access only that part of the tuple 
-in all the tuples in the table. 
+particular column, we need to access only that part of the tuple
+in all the tuples in the table.
 This means that we would like to access only part of a cacheline.
 This is however not feasible in current hardware, as the data is laid
-out in tuple-major order.  
+out in tuple-major order.
 
 In future hardware systems, we anticipate that we will have new DRAM access
-primitives that allow us to access parts of a cacheline and not just 
+primitives that allow us to access parts of a cacheline and not just
 entire cachelines.
-These primitives will allow the application to read a cacheline 
-composed of data stored in different DRAM rows by specifying 
+These primitives will allow the application to read a cacheline
+composed of data stored in different DRAM rows by specifying
 an DRAM \textit{access pattern}. This is illustrated in ~\cref{fig:primitives}.
 Consider a 4$\times$4 toy matrix. In the default row-major layout,
 fetching the first column will require four DRAM read operations as
-they will be serialized at the same bank. If we \textit{shuffle} 
+they will be serialized at the same bank. If we \textit{shuffle}
 the tile to DRAM row mapping as shown below, we observe that we can
 access both the first row (cacheline 1) and first column (denoted by, say,
 cacheline 1.2) using a single DRAM read operation.
 This effectively allows us to retrieve the required data (for instance, a column
-in a matrix) in fewer DRAM operations compared to existing DRAM access primitives. 
+in a matrix) in fewer DRAM operations compared to existing DRAM access primitives.
 Therefore, we can achieve (1) lower DRAM latency, (2) more efficient DRAM
 bandwidth utilization, and (3) lower energy consumption.
 
@@ -193,13 +193,13 @@ bandwidth utilization, and (3) lower energy consumption.
 \end{figure*}
 
 
-The problem we address in this work involves designing a compiler pass that 
+The problem we address in this work involves designing a compiler pass that
 allows us to \textit{automatically} identify the application's access
 patterns and transforms the program to make use of these novel DRAM access
-primitives. 
+primitives.
 This reduces the burden on the programmer and thereby simplifies the adoption
 of these DRAM access primitives.
-At a high level, this involves addressing two subproblems: 
+At a high level, this involves addressing two subproblems:
 
 \begin{itemize}
   \item {Figuring out the different application access patterns}
@@ -458,9 +458,49 @@ To evaluate the effectiveness of our approach, we measure the runtime performanc
 
 \section{Experimental Evaluation}
 
-We evaluate effectiveness of the access primitives by comparing with the baseline performance. For the purposes of the evaluation, we assume that performance behavior of new primitives comparable to traditional row major access pattern so we use row major access pattern as the baseline for our evaluation.
+We evaluate effectiveness of the new architecture by comparing the performance with and without
+the support from DRAM for new access primitives. Specifically, we compare the performance
+of row major access pattern and other access patterns implemented in a system without the support,
+as we assume that performance behavior of new patterns will be similar to regular row major
+access pattern. We use following test code for the evaluation:
 
-Our
+\begin{Verbatim}[fontsize=\small]
+void test(void * matrix, int pattern_id, int rd_wr_ratio, int scale)  {
+    StartTimer();
+    for(k = 0 ; k < repeat; k++) {
+        AccessMatrix(mat, pattern_id, rd_wr_ratio, scale);
+    }
+    StopTimer();
+}
+\end{Verbatim}
+
+
+We report the runtime of the test case as we vary the pattern
+(\textit{pattern\_id}), read write ratio(\textit{rd\_wr\_ratio}) and size of the tile (\textit{scale}).
+
+\begin{itemize}
+  \item \textbf{Pattern} We implemented all access patterns depicted in \ref{fig:pattern} in C.
+  \item \textbf{Workload} We define the four workloads (Read only, Read heavy,
+Balanced, Write Heavy) using a parameter, read write ratio (0, 0.25, 0.5, 0.75 respectively).
+\textit{AccessMatrix} function randomly reads or writes different tiles of the matrix and read
+write ratio defines proportion of reads and writes in the generated workload.
+  \item \textbf{Tile size} This is the dimension of the pattern matrix. We evaluated the
+  workload using dimension 64, 128, 256, 512.
+\end{itemize}
+
+We summarize our main result in Figure~\ref{fig:evaluation}, where we report the normalized runtime
+with respect to the baseline (row major) pattern \textit{P0}. We observe that in general, all other patterns
+perform poorly in comparison to the baseline pattern, with pattern 7 (Column access pattern) showing
+the worst performance overall. This is in line with our expectation, as the memory architecture is optimized
+for row major access pattern.
+
+Furthermore, we observe that the performance degrades as the workload contains more store operations. This is
+also expected as more write instructions increase the number of modifications to the content of the memory.
+
+Finally we also analyze the effect of the tile size. We observe that the effects of access primites are more
+significant as we increase the tile size. This effect is more drastic for pattern 7 where the dimension of the
+tile is directly related to number of cache misses.
+
 
 \begin{figure*}[t]
     \centering
