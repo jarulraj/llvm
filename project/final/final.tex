@@ -334,10 +334,21 @@ We evaluate effectiveness of the new architecture by comparing the performance w
 the support from DRAM for new access primitives. Specifically, we compare the performance
 of row major access pattern and other access patterns implemented in a system without the support,
 as we assume that performance behavior of new patterns will be similar to regular row major
-access pattern.
+access pattern. We use following test code for the evaluation:
 
-We report the runtime of the test case provided in \ref{fig:testcode} as we vary the pattern
-(\textit{pattern_id}), read write ratio(\textit{rd_wr_ratio}) and size of the tile (\textit{scale}).
+\begin{Verbatim}[fontsize=\small]
+void test(void * matrix, int pattern_id, int rd_wr_ratio, int scale)  {
+    StartTimer();
+    for(k = 0 ; k < repeat; k++) {
+        AccessMatrix(mat, pattern_id, rd_wr_ratio, scale);
+    }
+    StopTimer();
+}
+\end{Verbatim}
+
+
+We report the runtime of the test case as we vary the pattern
+(\textit{pattern\_id}), read write ratio(\textit{rd\_wr\_ratio}) and size of the tile (\textit{scale}).
 
 \begin{itemize}
   \item \textbf{Pattern} We implemented all access patterns depicted in \ref{fig:pattern} in C.
@@ -349,21 +360,7 @@ write ratio defines proportion of reads and writes in the generated workload.
   workload using dimension 64, 128, 256, 512.
 \end{itemize}
 
-\begin{figure*}
-\begin{Verbatim}[fontsize=\small]
-void test(void * matrix, int pattern_id, int rd_wr_ratio, int scale)  {
-    StartTimer();
-    for(k = 0 ; k < repeat; k++) {
-        AccessMatrix(mat, pattern_id, rd_wr_ratio, scale);
-    }
-    StopTimer();
-}
-\end{Verbatim}
-
-\label{fig:testcode}
-\end{figure*}
-
-We summarize our main result in \ref{fig:evaluation}, where we report the normalized runtime
+We summarize our main result in Figure~\ref{fig:evaluation}, where we report the normalized runtime
 with respect to the baseline (row major) pattern \textit{P0}. We observe that in general, all other patterns
 perform poorly in comparison to the baseline pattern, with pattern 7 (Column access pattern) showing
 the worst performance overall. This is in line with our expectation, as the memory architecture is optimized
