@@ -624,7 +624,7 @@ in~\cref{tab:spec}.
     \centering
     \begin{tabular}{l|l}
     \textbf{CPU} & Intel Xeon CPU E5-2420 v2 $@$ 2.20GHz\\
-    \textbf{Number of CPU(s)} & 12 \\
+    \textbf{Number of CPUs} & 12 \\
     \textbf{Threads per core} & 2 \\
     \textbf{L1d cache} & 32 KB \\
 	\textbf{L1i cache} & 32 KB \\
@@ -639,70 +639,99 @@ in~\cref{tab:spec}.
 
 \section{Experimental Evaluation}
 
-We evaluate effectiveness of the new architecture by comparing the performance with and without
-the support from DRAM for new access primitives. Specifically, we compare the performance
-of row major access pattern and other access patterns implemented in a system without the support,
-as we assume that performance behavior of new patterns will be similar to regular row major
-access pattern. We use following test code for the evaluation:
+We evaluate potential performance impact of the novel DRAM access primitives by
+comparing the time taken to complete the \textit{same task} using different
+\textit{DRAM patterns ids} in our custom matrix library. 
+The task involves performing a long series of reads and writes in a large array
+at the tile-level granularity. We have a knob that allows us to adjust the
+read-write ratio.
+We then compare the performance obtained using different access patterns 
+in the system after normalizing them with respect to the default pattern id $0$.
 
-\begin{Verbatim}[fontsize=\small]
-void test(void * matrix, int pattern_id, int rd_wr_ratio, int scale) {
+A high-level overview of the benchmark looks like this :
+
+\begin{lstlisting}[caption={Benchmark}]
+
+void Test(void * matrix, int pattern_id, int rd_wr_ratio, int scale) {
     StartTimer();
+    
     for(k = 0 ; k < repeat; k++) {
         AccessMatrix(mat, pattern_id, rd_wr_ratio, scale);
     }
+
     StopTimer();
 }
-\end{Verbatim}
 
+\end{lstlisting}
 
-We report the runtime of the test case as we vary the pattern
-(\textit{pattern\_id}), read write ratio(\textit{rd\_wr\_ratio}) and size of the tile (\textit{scale}).
+We vary the following parameters in our experiments :
 
 \begin{itemize}
-  \item \textbf{Pattern} We implemented all access patterns depicted in \ref{fig:pattern} in C.
-  \item \textbf{Workload} We define the four workloads (Read only, Read heavy,
-Balanced, Write Heavy) using a parameter, read write ratio (0, 0.25, 0.5, 0.75 respectively).
-\textit{AccessMatrix} function randomly reads or writes different tiles of the matrix and read
-write ratio defines proportion of reads and writes in the generated workload.
-  \item \textbf{Tile size} This is the dimension of the pattern matrix. We evaluated the
-  workload using dimension 64, 128, 256, 512.
+  \item \textbf{Pattern Id:} We implemented all the 8 access patterns depicted
+  in~\cref{fig:pattern}.
+  \item \textbf{Workload:} We consider four workloads (Read only, Read heavy,
+Balanced, and Write Heavy) with the corresponding read-write ratio being 0,
+0.25, 0.5, and 0.75 respectively. The \textit{AccessMatrix} function reads and writes
+cells in different tiles of the matrix using the given pattern id based on the
+read-write ratio in the generated workload.
+  \item \textbf{Tile size:} This is the dimension of the square pattern matrix. 
+  We considered the following values - 64, 128, 256, and 512.
 \end{itemize}
 
-We summarize our main result in Figure~\ref{fig:evaluation}, where we report the normalized runtime
-with respect to the baseline (row major) pattern \textit{P0}. Among all patterns, we expect for P 7 (Columnar access) to perform most poorly as incurs most cache miss in the current architecture. 
-
- We observe that in general, all other patterns
-perform poorly in comparison to the baseline pattern. This is in line with our expectation, 
-as the memory architecture is optimized for row major access pattern and any access besides row major pattern will introduce one or more cache misses. 
-
-Furthermore, we observe that the performance degrades as the workload contains more store operations. 
-This effect is also expected as more write instructions 
-increase the number of modifications to the content of the 
-memory. This will provide more opportunity for optimization under new acces primitives. 
-
-Finally we also analyze the effect of the tile size. We observe that the effects of access primites are more
-significant as we increase the tile size. This effect is more drastic for pattern 7 where the dimension of the
-tile is directly related to number of cache misses. 
+We summarize our results in~\cref{fig:evaluation}, wherein we report the
+normalized runtime with respect to the baseline row-major pattern \textit{P 0}.
+Among all DRAM access primitives, we expected that the columnar access pattern
+\textit{P 7} would perform the worst for our task, as we designed the task to
+be ideally suited for the baseline DRAM access primitive.
 
 \begin{figure*}[ht!]
     \centering
-    \subfloat[64$\times$64 tiles]{
+    \subfloat[64$\times$64 tile]{
 	\includegraphics[width=0.5\textwidth]{images/64_runtime}
     }
-    \subfloat[128$\times$128 tiless]{
+    \subfloat[128$\times$128 tiles]{
 	\includegraphics[width=0.5\textwidth]{images/128_runtime}
     }\\
-    \subfloat[256$\times$256 tiles]{
+    \subfloat[256$\times$256 tile]{
 	\includegraphics[width=0.5\textwidth]{images/256_runtime}
     }
-    \subfloat[512$\times$512 tiless]{
+    \subfloat[512$\times$512 tiles]{
 	\includegraphics[width=0.5\textwidth]{images/512_runtime}
     }
-    \caption{\textbf{Performance -- Evaluation of workload}}
+    \caption{\textbf{Performance impact of DRAM access primitives} -- Evaluation
+    of the normalized runtime incurred while running the same task using
+    different DRAM access primitives. We consider four tasks (Read only, Read heavy,
+    Balanced, and Write Heavy) and four tile dimensions.}
 
     \label{fig:evaluation}
 \end{figure*}
+
+The main takeaway was that the choice of DRAM access pattern has a strong
+performance impact on the workload. In general, we observed that the other
+DRAM access primitives performed worser than the baseline access pattern
+on the task, to different extents.
+This is in line with our expectation, as the task and the current memory
+architecture is optimized for the default row-major DRAM access pattern.
+We observed that the other access patterns incur significantly higher L1
+data cache misses and this increases the normalized runtime of the workload.
+
+Furthermore, we note that the performance degradation is more
+pronounced in case of the write-intensive workloads (Balanced and Write-Heavy).
+We attribute this to the fact that write operations will need to 
+fetch the data and also write back the modifed contents back to memory,
+unlike the read operations. This increases the number of row-buffer
+conflicts and increases the sensitivity to the choice of the DRAM access pattern
+primitive.
+
+Finally we examined the impact of the tile size. We observed that the effects of
+access primitives are more significant with larger tile size. 
+This effect is prominently visible particulary for pattern id 7, wherein the
+dimension of the tile is directly related to number of cache misses incurred.
+Overall, we expect that depending on the hybrid application access pattern,
+the choice of DRAM access primitive will have a significant performance impact.
+Hence, there is a significant opportunity for the compiler to optimize this
+choice using our DRAM access cost model in future machines wherein we have
+these novel primitives.
 
 \section{Surprises and Lessons Learned}
 We were pleasantly surprised by the support in LLVM for analysing scalar expressions and annotations.
@@ -710,10 +739,23 @@ This helped reduce the complexity of the compiler pass.
 
 \section{Conclusions and Future Work}
 
-We present the compiler support for new memory architecture that provides new types of access primitives. We discussed the potential benefits and evaluated the runtime performance as we vary factors (pattern type, workload, and tile size) that affects the performance. We show that the new types of access can provide up to 5x speed up in run time. 
+We developed a compiler pass that allows us to automatically identify the hybrid
+application access pattern and optimize the choice of the underlying DRAM access
+primitives using a cost model.
+We examined the potential benefits of this optimization in our evaluation,
+wherein we varied the pattern type, workload, and tile size to observe the
+impact on runtime performance.
+Our evaluation showed that choosing these DRAM access primitives for
+the required task using a cost model can provide 2-5$\times$ speed-up.
 
-As discuss in the report, we restrict attention to the pre-defined patterns and synthetic low level array access workload. More extensive evaluation against the realistic workload may provide more detailed analysis of the performance behavior and may pose interesting challenge for future work. 
-
+In this work, we restricted our analysis to the canonical DRAM access patterns
+and used a synthetic low-level matrix-based library. We think that an
+extensive evaluation on more realistic workloads will provide a better 
+understanding of the performance impact of these primitives and raise 
+other interesting problems. After the prototype in the Gem5 simulator is
+fully functional, we can do a more accurate cache performance analysis.
+For instance, it will interesting to see the impact of these primitives on
+the traditional cache coherence protocols in case of write operations.
 
 \section{Distribution of Total Credit}
 
