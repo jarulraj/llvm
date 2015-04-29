@@ -170,7 +170,7 @@ with which the program performs these loads and stores.
 
 \begin{figure*}[ht]
 	\centering
-	\includegraphics[scale=0.35]{images/pattern}
+	\includegraphics[width=\textwidth]{images/pattern}
 	\caption{List of possible patterns for a 8x8 matrix with a given shuffling
 	function. There are 64 patterns and the column id refers to the cacheline
 	being accessed. The elements of the cacheline returned are highlighted.}
@@ -181,28 +181,23 @@ with which the program performs these loads and stores.
 
 \section{Experimental Evaluation}
 
-
-\begin{figure}[t]
+\begin{figure*}[t]
     \centering
-    \subfloat[Cache misses]{
-	\includegraphics[scale=0.35]{images/128_cache}
-        \label{fig:eval_cache}
+    \subfloat[64$\times$64 tiles]{
+	\includegraphics[width=0.5\textwidth]{images/64_runtime}
     } 
-    \subfloat[Runtime]{
-	\includegraphics[scale=0.35]{images/128_runtime}
-        \label{fig:eval_runtime}
+    \subfloat[128$\times$128 tiless]{
+	\includegraphics[width=0.5\textwidth]{images/128_runtime}
+    }\\
+    \subfloat[256$\times$256 tiles]{
+	\includegraphics[width=0.5\textwidth]{images/256_runtime}
+    } 
+    \subfloat[512$\times$512 tiless]{
+	\includegraphics[width=0.5\textwidth]{images/512_runtime}
     }
     \caption{\textbf{Performance -- Evaluation of workload}}
         
     \label{fig:evaluation}
-\end{figure}
-
-\begin{figure*}[ht]
-	\centering
-	\includegraphics[scale=0.35]{images/128_cache}
-	\caption{Performance comparison of row and column oriented access patterns.
-	The dimension attribute along the x-axis refers to the $\log_2$ of the length of the two-dimensional square matrix. }
-	\label{fig:perf}
 \end{figure*}
 
 
