@@ -19,8 +19,29 @@
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{color}
-
 \usepackage{subfig}
+
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{matrix,calc}
+
+\newenvironment{smallarray}[1]
+  {\gdef\MatName{#1}\begin{tikzpicture}
+    \matrix[
+    matrix of math nodes,
+    row sep=-\pgflinewidth,
+    column sep=-\pgflinewidth,
+    nodes={inner sep=1pt,rectangle,text width=2mm,align=center},
+    text depth=0mm,
+    text height=2mm,
+    nodes in empty cells
+    ]  (#1)}
+  {\end{tikzpicture}}
+\def\MyZ(#1,#2){%
+  \draw ([xshift=-3.6pt,yshift=3.6pt] $ (\MatName-#1-#2)!0.5!(\MatName-\the\numexpr#1+1\relax-\the\numexpr#2+1\relax) $ ) rectangle ([xshift=3.6pt,yshift=-3.6pt] $ (\MatName-#1-#2)!0.5!(\MatName-\the\numexpr#1+1\relax-\the\numexpr#2+1\relax) $ );
+}
+
 \DeclareCaptionType{copyrightbox}
 \captionsetup{font=small}
 \captionsetup{labelfont=bf}
@@ -426,8 +447,53 @@ supply using the novel DRAM access primitives.
 
 The elements of the cacheline that are highlighted will be returned to the 
 application that is requesting the desired cacheline and pattern id.
-We first note that using this tile to DRAM row mapping, we can access both
+We note that using this tile to DRAM row mapping, we can access both
 the first row and first column in the matrix in a single DRAM read operation.
+
+\subsubsection{Simple Mapping Function}
+
+Based on this observation, we started with a simple mapping function.
+In the delinearized access pattern, if the innermost loop is the outer 
+condition, then clearly it is column-oriented and will benefit from 
+pattern id $7$. On the other hand, if the innermost loop is the inner
+condition of the delinearized access pattern, then it will benefit
+from pattern id $0$, the default pattern in current hardware systems.
+
+Although this works well for relatively complex workloads comprising
+of both row-oriented and column-oriented accesses to different 
+data structures, this does not generalize to more complicated access
+patterns. We therefore refined the cost model to take into account
+other access patterns ranging from $1$ through $6$.
+
+\subsubsection{Basic Cost Model}
+
+In this model, for a given data structure, we first analyse all the cell
+elements accessed by the set of all patterns in the loop. This is done
+using the analysis described in previous subsection. We then compute
+the difference between that tile and each of the available access patterns.
+
+For instance, say the hybrid access pattern for the data structure looks
+like this :
+
+\begin{figure*}[ht!]
+	\centering
+	\begin{smallarray}{mat2}
+	{
+	\bullet & \bullet & \bullet & \bullet & \bullet & \bullet & \bullet & \bullet \\
+	\bullet & \circ & \circ & \circ & \circ & \circ & \circ & \circ \\
+	\bullet & \circ & \circ & \circ & \circ & \circ & \circ & \circ \\
+	\bullet & \circ & \circ & \circ & \circ & \circ & \circ & \circ \\
+	\bullet & \circ & \circ & \circ & \circ & \circ & \circ & \circ \\
+	\bullet & \circ & \circ & \circ & \circ & \circ & \circ & \circ \\
+	\bullet & \circ & \circ & \circ & \circ & \circ & \circ & \circ \\
+	\bullet & \circ & \circ & \circ & \circ & \circ & \circ & \circ \\
+	\bullet & \circ & \circ & \circ & \circ & \circ & \circ & \circ \\
+	};
+	\end{smallarray}
+	\caption{Sample hybrid application access pattern.}
+	\label{fig:hybrid}
+\end{figure*}
+
 
 
 \section{Experimental Setup}
