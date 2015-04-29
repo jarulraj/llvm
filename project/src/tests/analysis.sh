@@ -1,8 +1,8 @@
 #!/bin/bash
 prefix=${1}
 pattern=(0 1 2 3 4 5 6 7)
-wr=(0 0.1 0.5)
-wr_str=("Read Only" "Read Heavy" "Write Heavy")
+wr=(0 0.25 0.5 0.75)
+wr_str=("Read Only" "Read Heavy" "Balanced" "Write Heavy")
 scale=${2}
 
 for s in ${scale[@]}
