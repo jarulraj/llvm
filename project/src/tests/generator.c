@@ -133,7 +133,7 @@ int AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int 
                 case 0:
                     for(row_itr = 0 ; row_itr < scale ; row_itr++) {
                         for(col_itr = 0 ; col_itr < scale ; col_itr++){
-                            tile[row_itr*8 + col_itr] = 1;
+                            tile[row_itr*scale + col_itr] = 1;
                         }
                     }
                     break;
