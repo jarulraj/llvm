@@ -471,7 +471,6 @@ In this model, for a given data structure, we first analyse all the cell
 elements accessed by the set of all patterns in the loop. This is done
 using the analysis described in previous subsection. We then compute
 the difference between that tile and each of the available access patterns.
-
 For instance, say the hybrid access pattern for the data structure looks
 like this :
 
@@ -494,8 +493,70 @@ like this :
 	\label{fig:hybrid}
 \end{figure*}
 
-\section{Experimental Setup}
+The difference between the hybrid access pattern and pattern id 0, column id 0
+is 6. Similarly, the difference between the hybrid access pattern and pattern id
+7, column id 0 is also 6. Either of these DRAM access primitives will be
+a good fit for the hybrid access pattern. In general, for two tiles
+$\mathcal{T}_{a}$ and $\mathcal{T}_{b}$, each of dimensions $n$ $\times$ $m$, is 
+given by :
 
+$$\text{Basic Cost}(\mathcal{T}_{a}, \mathcal{T}_{b}) = \sum_{i=1}^{n}
+\sum_{j=1}^{m} | \mathcal{T}_{a}[i][j] - \mathcal{T}_{b}[i][j] |$$
+
+The lower the cost, the better the fit between the access primitive and the
+hybrid access pattern. Although, this simple cost model  can handle more
+complicated access patterns, including those resembling DRAM access patterns
+$1$ through $6$, we realized that the model needs to be refined to consider
+cacheline data alignment.
+
+\subsubsection{Data Alignment Based Cost Model}
+
+The key observation is that when the first cell in a given DRAM row is fetched,
+the remaining cells in that row are also fetched into the row buffer.
+Therefore, not all cells in the tile are equally important.
+We can refine the cost model to handle data alignment in this manner.
+
+For the tiles $\mathcal{T}_{a}$ and $\mathcal{T}_{b}$, each of dimensions $n$
+$\times$ $m$, we first construct corresponding binary vectors $\mathcal{V}_{a}$
+and $\mathcal{V}_{b}$, each of length $n$. For each row in the two tiles, 
+if the sum of the elements in the row is non-zero, then the corresponding vector
+element is set to one, i.e.
+
+\[
+\mathcal{V}_{a}[i] =
+\begin{cases}
+1 , & \text{if } \sum_{j=1}^{n} \mathcal{T}_{a}[i][j] > 0 \\
+0 , & \text{otherwise} 
+\end{cases}
+\]
+
+Now, we can define the cost as :
+
+$$\text{Data Alignment Cost}(\mathcal{T}_{a}, \mathcal{T}_{b}) = \sum_{i=1}^{n} 
+| \mathcal{V}_{a}[i][j] - \mathcal{V}_{b}[i][j] |$$
+
+This refined model works well for cacheline alignment. However, we will need to
+resolve ties between access primitives that have the same data aligment cost but
+may not be equally good fits for the hybrid access pattern.
+We therefore take both the basic cost and data alignment cost into consideration
+to figure out the ideal access primitive for a given hybrid access pattern.
+This is defined as :
+
+\begin{align*}
+\text{Weighted DRAM Access Cost}(\mathcal{T}_{a}, \mathcal{T}_{b}) 
+&= \alpha \times \text{Data Alignment Cost}(\mathcal{T}_{a}, \mathcal{T}_{b})
++ \\
+& (1-\alpha) \times \text{Basic Cost}(\mathcal{T}_{a}, \mathcal{T}_{b})
+\end{align*}
+
+Now, we can use the weighted DRAM access cost model to find the optimal DRAM
+access primitive for a given hybrid application access pattern. Thus, to summarize,
+we first analyze the loads and stores associated with the critical data
+structures to determine the application's access patterns and then use the
+cost model to map that access pattern to make use of the relevant DRAM access
+primitive.
+
+\section{Experimental Setup}
 
 To evaluate the effectiveness of our approach, we measure the runtime performance of the application utilizing new DRAM acces primitives using a prototype.
 
