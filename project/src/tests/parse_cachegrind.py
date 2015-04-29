@@ -1,10 +1,10 @@
 #!/usr/bin/python
-#import matplotlib
+import matplotlib
+matplotlib.use('Agg')
+
 from matplotlib import colors
 from matplotlib import pyplot as plt
 import numpy as np
-
-
 import re
 import sys
 
@@ -20,7 +20,9 @@ descs = sys.argv[5].split(",")
 perfs = {}
 workload_data = {}
 workload_label = {}
-for w in workloads:
+workload_names = []
+print sys.argv
+for i,w in enumerate(workloads):
     tokens = w.split(":")
     name = tokens[0]
     data = tokens[2]
@@ -28,6 +30,7 @@ for w in workloads:
     perfs[name] = {}
     workload_data[name] = data
     workload_label[name] = label
+    workload_names.append(name)
 
 for input_file_prefix in input_files:
     for w in workload_data.keys():
@@ -36,6 +39,7 @@ for input_file_prefix in input_files:
             perfs[w][input_file_prefix] = {}
             print "w=%s input=%s\n" % (w, input_file_prefix)
             for line in f:
+                line = line.replace(",", "")
                 if re.match('.+D1  miss rate:\W+(\d+.\d+)\W+\(\W+(\d+.\d+)\%\W+\+\W+(\d+.\d+).+', line):
                     tokens = re.split('.+D1  miss rate:\W+(\d+.\d+)\W+\(\W+(\d+.\d+)\%\W+\+\W+(\d+.\d+).+', line)
                     perfs[w][input_file_prefix]['d1_overall'] = float(tokens[1])
@@ -47,10 +51,26 @@ for input_file_prefix in input_files:
                     perfs[w][input_file_prefix]['lld_overall'] = float(tokens[1])
                     perfs[w][input_file_prefix]['lld_read'] = float(tokens[2])
                     perfs[w][input_file_prefix]['lld_write'] = float(tokens[3])
+                elif re.match('.+D1\W+misses:\W+(\d+)\W+\(\W*(\d+) rd\W+\+\W+(\d+).+', line):
+                    tokens = re.split('.+D1\W+misses:\W+(\d+)\W+\(\W*(\d+) rd\W+\+\W+(\d+).+', line)
+                    perfs[w][input_file_prefix]['d1_overall_miss'] = float(tokens[1])
+                    perfs[w][input_file_prefix]['d1_read_miss']= float(tokens[2])
+                    perfs[w][input_file_prefix]['d1_write_miss'] = float(tokens[3])
+                elif re.match('.+LLd misses:\W+(\d+)\W*\(\W+(\d+) rd\W+\+\W+(\d+).+', line):
+                    tokens = re.split('.+LLd misses:\W+(\d+)\W+\(\W+(\d+) rd\W+\+\W+(\d+).+', line)
+                    print tokens
+                    perfs[w][input_file_prefix]['lld_overall_miss'] = float(tokens[1])
+                    perfs[w][input_file_prefix]['lld_read_miss'] = float(tokens[2])
+                    perfs[w][input_file_prefix]['lld_write_miss'] = float(tokens[3])
+
                 elif re.match('Duration :: (\d+.\d+).+', line):
                     tokens = re.split('Duration :: (\d+.\d+).+', line)[1]
                     print tokens
                     perfs[w][input_file_prefix]['runtime'] = float(tokens)
+                else:
+                    print line
+
+print perfs
 
 my_color = {"grey": colors.colorConverter.to_rgb("#4D4D4D"),
             "blue": colors.colorConverter.to_rgb("#5DA5DA"),
@@ -71,18 +91,26 @@ fig, ax = plt.subplots()
 bar_handles = []
 bar_legendhandles = []
 bar_labels = []
-for w in perfs:
+
+real_data_for_plot = []
+for w in workload_names:
     data = []
     for input_file in input_files:
-        print w
-        print input_file
-        print workload_data[w]
+        #print w
+        #print input_file
+        #print workload_data[w]
         data.append(perfs[w][input_file][workload_data[w]])
+    data = np.array(data)
+    real_data_for_plot.append(data)
 
+print real_data_for_plot
+for i,w in enumerate(workload_names):
+    data = real_data_for_plot[i]
     baseline = data[0]
     print data
     data = np.array(data)
     data = data/baseline
+    #data = np.log(data)
     idx = len(bar_handles)
     handle = ax.bar(ind + idx * width, data, width, color=my_color[my_color.keys()[idx]])
     bar_handles.append(handle)
@@ -92,7 +120,7 @@ for w in perfs:
 ax.set_ylabel(y_label)
 ax.set_xticks(ind + 0.8/2)
 ax.set_xticklabels(descs)
-ax.legend(bar_legendhandles, bar_labels)
+ax.legend(bar_legendhandles, bar_labels, loc='upper left')
 
 plt.savefig(outfile)
 

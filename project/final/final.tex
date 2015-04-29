@@ -27,24 +27,22 @@
 \captionsetup[subfloat]{captionskip=1pt}
 \captionsetup[table]{belowskip=0pt}
 
-
-
 %\DeclareMathOperator*{\argmin}{arg\,min}
 %\DeclareMathOperator*{\argmax}{arg\,max}
 
 \newcommand{\email}[1]{\href{mailto:#1@cs.cmu.edu}{#1}}
 
 \begin{document}
-
-\section*{}
+\title{Optimizing Matrix Operations Using Novel DRAM
+  Access Primitives}
+ \author{}
+\date{}
+\maketitle
 \begin{center}
-  \centerline{\textbf{\Large Optimizing Matrix Operations Using Novel DRAM
-  Access Primitives}}
-  \vspace{1em}
   \textsc{\large CMU 15-745: Optimizing Compilers (Spring 2015)} \\
   \vspace{1em}
   \textsc{\large Final Report} \\
-  \vspace{3em}
+  \vspace{1em}
   \centerline{\large{Joy Arulraj (\email{jarulraj}), Anuj Kalia
     (\email{akalia})}, Jun Woo Park (\email{junwoop}) }
   \vspace{1em}
@@ -84,13 +82,14 @@ a matrix library showed that TODO.
 
 DRAM access patterns significantly impact the performance of memory-bound
 applications. The delay incurred while handling a cache miss is not
-constant as the access latencies within DRAM are not uniform ~\cite{dram1}.
+constant as the access latencies within DRAM are not uniform~\cite{dram1}.
 DRAM is organized as a set of banks, each of which is made up of multiple
 chips. Consecutive memory addresses are interleaved evenly across the
 DRAM banks. Each bank has a row-buffer that is used to speed up DRAM
 accesses. When the application requests for a page in a bank, the page
-is first fetched into the bank's row buffer. Then, it can be accessed by
+is first fetched into the bank's row buffer. Then, it is sent to the
 the application. If the application happens to request for a page that
+<<<<<<< HEAD
 is already present in the row buffer, it is termed as a row-buffer hit.
 This results in the minimal DRAM access latency. However, if the page
 is not present in the row buffer, then the appropriate row in the DRAM
@@ -102,49 +101,104 @@ Programmers strive hard to lay out their application data structures
 to generate access patterns that can be served efficiently by the DRAM chips.
 For instance, DBMSs targeting analytical workloads use a pure-columnar
 data layout so that values stored in the same tabular column are stored
+=======
+is already present in the row buffer, it is termed as a \textit{row-buffer
+hit}. This results in the minimal DRAM access latency i.e. one memory
+cycle.
+However, if the page is not present in the row buffer, then the appropriate row
+in the DRAM bank needs to be activated before the requested page can be loaded into
+the row buffer and returned to the application. This event is referred to as a
+\textit{row buffer miss}.
+
+Programmers strive hard to lay out their application data structures
+to generate access patterns that can be served efficiently by the DRAM chips.
+For instance, DBMSs targeting analytical workloads use a \textit{pure-columnar}
+data layout so that values present in the same tabular column are stored
+>>>>>>> 7b735080a3113c0fa3c0ea4c80ac7d83038783e5
 in consecutively addressed data locations~\cite{col1,raman13,ailamaki02}. This
 helps spread the DRAM accesses to multiple DRAM banks that can serve the requests in
 parallel. Thus, the application can better utilize the available DRAM
 bandwidth.
 
+<<<<<<< HEAD
 For instance, we compare the time taken to compute the sum of a row and sum of a
 column in a matrix laid out in row-major order.
 The results are shown in Figure~\ref{fig:perf}. We observe that summing a row is several times
 faster than column sum.
+=======
+To give a concrete example, we compare the average time taken to compute the
+sum of a row and sum of a column in a matrix laid out in row-major order.
+The results are shown in ~\cref{fig:perf}.
+We observe that summing a row in this case is 2--4$\times$ faster than the
+columnar sum operation.
+>>>>>>> 7b735080a3113c0fa3c0ea4c80ac7d83038783e5
 
 \begin{figure*}[ht]
 	\centering
 	\includegraphics[scale=0.35]{images/rowmajor}
 	\caption{Performance comparison of row and column oriented access patterns.
-	The dimension attribute along the x-axis refers to the $\log_2$ of the length of the two-dimensional square matrix. }
+	The dimension attribute along the x-axis refers to the $\log_2$ of
+	the length of the two-dimensional square matrix. }
 	\label{fig:perf}
 \end{figure*}
 
 
 \subsection{The Problem}
 
-This approach, however does not work for complex workloads that have
+In this work, we focus on applications that have complex workloads with
 mixed DRAM access patterns. For instance, in a hybrid transaction and
 analytical processing (HTAP) workload~\cite{grund10}, the DBMS needs to
 access both the tuples and columns of a table efficiently. Irrespective of
 whether the DBMS uses a pure-row or pure-columnar layout, one of the two
-access patterns will suffer from poor DRAM performance. For instance, assume
-that the DBMS uses a pure-row layout and that the tuple's size is one
-cacheline.
-When serving an analytical query that needs to sum up the values in a
-particular column, we need to access only that part of the tuple in all the tuples in
-the table. This means that we would like to access only part of a cacheline.
-This is however not currently feasible in hardware.
 
-In future memory systems, we expect to have new DRAM access primitives that
-allow us to access parts of a cacheline rather than entire cachelines.
+access patterns has to suffer from poor DRAM performance. For instance, assume
+that the DBMS uses a pure-row layout and that the size of each tuple is one
+cacheline (64 bytes).
+When serving an analytical query that needs to sum up the values in a
+particular column, we need to access only that part of the tuple
+in all the tuples in the table.
+This means that we would like to access only part of a cacheline.
+This is however not feasible in current hardware, as the data is laid
+out in tuple-major order.
+
+In future hardware systems, we anticipate that we will have new DRAM access
+primitives that allow us to access parts of a cacheline and not just
+entire cachelines.
 These primitives will allow the application to read a cacheline
-composed of data actually stored in different cachelines by specifying
-an ``access pattern''.
-This allows us to retrieve the required data (for instance, a column in a matrix)
-in fewer DRAM operations compared to existing access primitives.
-Therefore, we can achieve more efficient DRAM bandwidth utilization
-and less energy consumption.
+composed of data stored in different DRAM rows by specifying
+an DRAM \textit{access pattern}. This is illustrated in ~\cref{fig:primitives}.
+Consider a 4$\times$4 toy matrix. In the default row-major layout,
+fetching the first column will require four DRAM read operations as
+they will be serialized at the same bank. If we \textit{shuffle}
+the tile to DRAM row mapping as shown below, we observe that we can
+access both the first row (cacheline 1) and first column (denoted by, say,
+cacheline 1.2) using a single DRAM read operation.
+This effectively allows us to retrieve the required data (for instance, a column
+in a matrix) in fewer DRAM operations compared to existing DRAM access primitives.
+Therefore, we can achieve (1) lower DRAM latency, (2) more efficient DRAM
+bandwidth utilization, and (3) lower energy consumption.
+
+\begin{figure*}[ht]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/primitives}
+	\caption{Novel DRAM access primitives that allow the application to read
+	both a column or a row in a small matrix in a single DRAM read operation.}
+	\label{fig:primitives}
+\end{figure*}
+
+
+The problem we address in this work involves designing a compiler pass that
+allows us to \textit{automatically} identify the application's access
+patterns and transforms the program to make use of these novel DRAM access
+primitives.
+This reduces the burden on the programmer and thereby simplifies the adoption
+of these DRAM access primitives.
+At a high level, this involves addressing two subproblems:
+
+\begin{itemize}
+  \item {Figuring out the different application access patterns}
+  \item {Mapping the access patterns to make use of underlying DRAM access primitives.}
+\end{itemize}
 
 \subsection{Our Approach}
 
@@ -168,82 +222,32 @@ with which the program performs these loads and stores.
 
 \subsection{Contributions}
 
-\section{Matrix Access Pattern Analysis}
-
-\section{Experimental Setup}
-
-To evaluate the effectiveness of our approach, we measure the runtime performance of the application utilizing new DRAM acces primitives using a prototype.
+We make the following contributions in this project:
 
 \begin{itemize}
-
-	\item \textbf{Compiler Pass:} We implemented an LLVM 3.5 compiler pass that analyses data structure access patterns. We utilize programmer annotation support to pin-point the data structrues that we wish to analyze, and make use of Scalar Evolution (SCEV) pass provided by LLVM framework to examine the access indices. We then cross reference the result with available patterns from DRAM primitives \ref{fig:pattern} to compute the pattern id that maximizes the performance.
-	\item \textbf{Gem 5:} Gem5 simulator is a configurable simulation framework that can emulate novel DRAM access primitives. We use modified version of Gem5, that takes in pattern id from unused address bits from the prefetch instruction and emulates the access pattern. However, due to functional limitations we were not to obtain the statistics we needed for the evaluation and we decided to measure performance directly using sets of test applications.
+  \item {We implemented an LLVM pass that determines the different data
+  structure access patterns by an application.}
+  \item {We developed a basic DRAM access cost model that allows the compiler to
+  map the application access pattern to the most optimal DRAM access pattern.}
+  \item {We illustrate the performance benefits of these novel DRAM access primitive
+  through a quantitative evaluation on different workloads in a custom matrix
+  library.}
 \end{itemize}
 
+\section{Matrix Access Pattern Analysis}
 
-\begin{table}[t]
-    \centering
-    \begin{tabular}{c|c}
-	\textbf{CPU} & \\
-    \textbf{RAM} & \\
-    \textbf{HDD} & \\
-
-	\end{tabular}
-    \caption{
-        \textbf{System Specification} --
-        The specification of the system used for evaluation
-    }
-    \label{tab:spec}
-\end{table}
-
-\section{Experimental Evaluation}
-
-We evaluate effectiveness of the access primitives by comparing with the baseline performance. For the purposes of the evaluation, we assume that performance behavior of new primitives comparable to traditional row major access pattern so we use row major access pattern as the baseline for our evaluation.
-
-Our result
-
-\begin{figure}[t]
-    \centering
-    \subfloat[Cache misses]{
-	\includegraphics[scale=0.35]{images/128_cache}
-        \label{fig:eval_cache}
-    }
-    \subfloat[Runtime]{
-	\includegraphics[scale=0.35]{images/128_runtime}
-        \label{fig:eval_runtime}
-    }
-    \caption{
-        \textbf{Performance} -- Evaluation of workload
-    }
-    \label{fig:evaluation}
-\end{figure}
-
-
-
-
-
-
-\begin{figure*}[ht]
-	\centering
-	\includegraphics[scale=0.35]{images/128_cache}
-	\caption{Performance comparison of row and column oriented access patterns.
-	The dimension attribute along the x-axis refers to the $\log_2$ of the length of the two-dimensional square matrix. }
-	\label{fig:perf}
-\end{figure*}
-
-
-
-\section{Surprises and Lessons Learned}
-
-\section{Conclusions and Future Work}
-
-\section{Distribution of Total Credit}
+\subsection{LLVM Pass}
 
 We still plan to implement a compiler pass to perform data structure access pattern analysis, and
 then do a performance evaluation to identify the impact of changing the DRAM
 access pattern by using new DRAM access primitives.
 
 The output of the compiler pass on a sample program is shown below :
+
+We have implemented the compiler pass that analyses our benchmark library automatically without requiring
+programmer annotations about stride and offset. However, we still need to figure out how to do
+a realistic performance evaluation. A first-order approximation of the performance impact is
+however already seen in Figure~\ref{fig:perf}.
 
 \begin{Verbatim}[fontsize=\small]
 ------------------------------
@@ -293,33 +297,82 @@ AddRec: {1,+,3}<nw><%for.cond>
 We are now figuring out how best to use this information to automatically
 choose the best data access and layout pattern.
 
-\section{Meeting Milestone}
+\subsection{DRAM Access Cost Model}
 
 We have implemented the compiler pass that analyses our benchmark library automatically without requiring
 programmer annotations about stride and offset. However, we still need to figure out how to do
 a realistic performance evaluation. A first-order approximation of the performance impact is
 however already seen in Figure~\ref{fig:perf}.
+\begin{figure*}[ht!]
+	\centering
+	\includegraphics[width=0.9\textwidth]{images/pattern}
+	\caption{List of possible patterns for a 8x8 matrix with a given shuffling
+	function. There are 64 patterns and the column id refers to the cacheline
+	being accessed. The elements of the cacheline returned are highlighted.}
+	\label{fig:pattern}
+\end{figure*}
 
-\section{Surprises}
+\section{Experimental Setup}
 
+To evaluate the effectiveness of our approach, we measure the runtime performance of the application utilizing new DRAM acces primitives using a prototype.
+
+\begin{itemize}
+
+  \item \textbf{Compiler Pass:} We implemented an LLVM 3.5 compiler pass that analyses data structure access patterns. We utilize programmer annotation support to pin-point the data structrues that we wish to analyze, and make use of Scalar Evolution (SCEV) pass provided by LLVM framework to examine the access indices. We then cross reference the result with available patterns from DRAM primitives \ref{fig:pattern} to compute the pattern id that maximizes the performance.
+  \item \textbf{Gem 5:} Gem5 simulator is a configurable simulation framework that can emulate novel DRAM access primitives. We use modified version of Gem5, that takes in pattern id from unused address bits from the prefetch instruction and emulates the access pattern. However, due to functional limitations we were not to obtain the statistics we needed for the evaluation and we decided to measure performance directly using sets of test applications.
+\end{itemize}
+
+
+\begin{table}[t]
+    \centering
+    \begin{tabular}{c|c}
+  \textbf{CPU} & \\
+    \textbf{RAM} & \\
+    \textbf{HDD} & \\
+
+  \end{tabular}
+    \caption{
+        \textbf{System Specification} --
+        The specification of the system used for evaluation
+    }
+    \label{tab:spec}
+\end{table}
+
+\section{Experimental Evaluation}
+
+We evaluate effectiveness of the access primitives by comparing with the baseline performance. For the purposes of the evaluation, we assume that performance behavior of new primitives comparable to traditional row major access pattern so we use row major access pattern as the baseline for our evaluation.
+
+Our
+
+\begin{figure*}[t]
+    \centering
+    \subfloat[64$\times$64 tiles]{
+	\includegraphics[width=0.5\textwidth]{images/64_runtime}
+    }
+    \subfloat[128$\times$128 tiless]{
+	\includegraphics[width=0.5\textwidth]{images/128_runtime}
+    }\\
+    \subfloat[256$\times$256 tiles]{
+	\includegraphics[width=0.5\textwidth]{images/256_runtime}
+    }
+    \subfloat[512$\times$512 tiless]{
+	\includegraphics[width=0.5\textwidth]{images/512_runtime}
+    }
+    \caption{\textbf{Performance -- Evaluation of workload}}
+
+    \label{fig:evaluation}
+\end{figure*}
+
+\section{Surprises and Lessons Learned}
 We were pleasantly surprised by the support in LLVM for analysing scalar expressions and annotations.
 This helped reduce the complexity of the compiler pass.
 
-\section{Revised Schedule}
+\section{Conclusions and Future Work}
 
-\begin{itemize}
-\item Joy Arulraj : Evaluate the performance impact of the transformations on different matrix operations.
-\item Anuj Kalia : Transform the code to use the DRAM access primitives.
-\item Jun Woo Park : Examine how this transformation impacts memory level parallelism and caching behavior.
-\end{itemize}
+\section{Distribution of Total Credit}
 
-\section{Resources Needed:}
-
-We need some guidance on performance evaluation. We have written our own microbenchmarks and
-are using the LLVM framework to implement our proposed optimizations.
-
-%\bibliographystyle{acm}
-%\bibliography{ref}
+\bibliographystyle{acm}
+\bibliography{ref}
 
 \end{document}
 

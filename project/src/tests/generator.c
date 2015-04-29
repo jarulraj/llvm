@@ -112,7 +112,7 @@ int SumColumn(struct Matrix *matrix, int col_id) {
     return sum;
 }
 
-void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int scale){
+int AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int scale){
     int *data = matrix->data;
     size_t num_rows = matrix->num_rows;
     size_t num_cols = matrix->num_cols;
@@ -122,6 +122,7 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
     double rd_wr;
     double sum = 0;
     int row_offset, col_offset;
+    int val = rand();
 
     for(tile_itr = 0 ; tile_itr < num_tiles ; tile_itr++) {
         int *tile = data + (tile_itr * scale * scale);
@@ -133,7 +134,7 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
                 case 0:
                     for(row_itr = 0 ; row_itr < scale ; row_itr++) {
                         for(col_itr = 0 ; col_itr < scale ; col_itr++){
-                            tile[row_itr*8 + col_itr] = 1;
+                            tile[row_itr*scale + col_itr] = val;
                         }
                     }
                     break;
@@ -142,20 +143,20 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
                     for(row_itr = 0 ; row_itr < scale ; row_itr++) {
                         row_offset = row_itr%2;
                         for(col_itr = row_offset ; col_itr < scale ; col_itr+=2){
-                            tile[(row_itr-row_offset)*scale+(col_itr+row_offset)] = 1;
-                            tile[(row_itr-row_offset+1)*scale+(col_itr+row_offset)] = 1;
+                            tile[(row_itr-row_offset)*scale+(col_itr+row_offset)] = val;
+                            tile[(row_itr-row_offset+1)*scale+(col_itr+row_offset)] = val;
                         }
-                    } 
+                    }
                     break;
 
                 case 2:
                     for(row_itr = 0 ; row_itr < scale ; row_itr++) {
                         row_offset = row_itr%4;
                         for(col_itr = row_offset/2 ; col_itr < scale ; col_itr+=4){
-                            tile[(row_itr-row_offset)*scale+(col_itr)] = 1;
-                            tile[(row_itr-row_offset+2)*scale+(col_itr+1)] = 1;
-                            tile[(row_itr-row_offset)*scale+(col_itr+(scale/2))] = 1;
-                            tile[(row_itr-row_offset+2)*scale+(col_itr+(scale/2)+1)] = 1;
+                            tile[(row_itr-row_offset)*scale+(col_itr)] = val;
+                            tile[(row_itr-row_offset+2)*scale+(col_itr+1)] = val;
+                            tile[(row_itr-row_offset)*scale+(col_itr+(scale/2))] = val;
+                            tile[(row_itr-row_offset+2)*scale+(col_itr+(scale/2)+1)] = val;
                         }
                     }
                     break;
@@ -165,8 +166,8 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
                         col_offset = col_itr%(scale/2);
                         row_offset = col_itr - col_itr%(scale/2);
                         for(row_itr = 0 ; row_itr < (scale/2) ; row_itr++){
-                            tile[(col_offset)*scale+(row_offset+row_itr)] = 1;
-                            tile[(col_offset+(scale/2))*scale+(row_offset+row_itr)] = 1;
+                            tile[(col_offset)*scale+(row_offset+row_itr)] = val;
+                            tile[(col_offset+(scale/2))*scale+(row_offset+row_itr)] = val;
                         }
                     }
                     break;
@@ -174,22 +175,22 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
                 case 4:
                     for(row_itr = 0 ; row_itr < scale ; row_itr++) {
                         row_offset = row_itr%(scale/2);
-                        row_offset = row_itr - row_itr%(scale/2);
+                        col_offset = row_itr - row_itr%(scale/2);
                         for(col_itr = 0 ; col_itr < (scale/2) ; col_itr++){
-                            tile[(row_offset)*scale+(col_offset+col_itr)] = 1;
-                            tile[(row_offset+(scale/2))*scale+(col_offset+col_itr)] = 1;
+                            tile[(row_offset)*scale+(col_offset+col_itr)] = val;
+                            tile[(row_offset+(scale/2))*scale+(col_offset+col_itr)] = val;
                         }
                     }
                     break;
-                
+
                 case 5:
                     for(col_itr = 0 ; col_itr < scale ; col_itr++) {
                         col_offset = col_itr%4;
                         for(row_itr = col_offset/2 ; row_itr < scale ; row_itr+=4){
-                            tile[(col_itr-col_offset)*scale+(row_itr)] = 1;
-                            tile[(col_itr-col_offset+2)*scale+(row_itr+1)] = 1;
-                            tile[(col_itr-col_offset)*scale+(row_itr+(scale/2))] = 1;
-                            tile[(col_itr-col_offset+2)*scale+(row_itr+(scale/2)+1)] = 1;
+                            tile[(col_itr-col_offset)*scale+(row_itr)] = val;
+                            tile[(col_itr-col_offset+2)*scale+(row_itr+1)] = val;
+                            tile[(col_itr-col_offset)*scale+(row_itr+(scale/2))] = val;
+                            tile[(col_itr-col_offset+2)*scale+(row_itr+(scale/2)+1)] = val;
                         }
                     }
                     break;
@@ -198,8 +199,8 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
                     for(col_itr = 0 ; col_itr < scale ; col_itr++) {
                         col_offset = col_itr%2;
                         for(row_itr = col_offset ; row_itr < scale ; row_itr+=2){
-                            tile[(col_itr-col_offset)*scale+(row_itr+col_offset)] = 1;
-                            tile[(col_itr-col_offset+1)*scale+(row_itr+col_offset)] = 1;
+                            tile[(col_itr-col_offset)*scale+(row_itr+col_offset)] = val;
+                            tile[(col_itr-col_offset+1)*scale+(row_itr+col_offset)] = val;
                         }
                     }
                     break;
@@ -207,7 +208,7 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
                 case 7:
                     for(col_itr = 0 ; col_itr < scale ; col_itr++){
                         for(row_itr = 0 ; row_itr < scale ; row_itr++) {
-                            tile[row_itr*scale + col_itr] = 1;
+                            tile[row_itr*scale + col_itr] = val;
                         }
                     }
                     break;
@@ -224,8 +225,9 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
             switch(pattern_id){
                 case 0:
                     for(row_itr = 0 ; row_itr < scale ; row_itr++) {
-                        for(col_itr = 0 ; col_itr < scale ; col_itr++){
+                        for(col_itr = 0 ; col_itr < scale ; col_itr+=2){
                             sum += tile[row_itr*scale + col_itr];
+                            sum += tile[row_itr*scale + col_itr + 1];
                         }
                     }
                     break;
@@ -239,7 +241,7 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
                         }
                     }
                     break;
-                
+
                 case 2:
                     for(row_itr = 0 ; row_itr < scale ; row_itr++) {
                         row_offset = row_itr%4;
@@ -273,7 +275,7 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
                         }
                     }
                     break;
-                
+
                 case 5:
                     for(col_itr = 0 ; col_itr < scale ; col_itr++) {
                         col_offset = col_itr%4;
@@ -312,18 +314,19 @@ void AccessMatrix(struct Matrix *matrix, int pattern_id, double rd_wr_ratio, int
         }
     }
 
+    return sum;
 }
 
 
-#define SIZE 16
+#define SIZE 64
 
 // Tester
 int main (int argc, char *argv[]) {
 
     struct Matrix *mat;
 
-    if(argc != 4){
-        fprintf(stderr, "Usage :: ./generator <pattern_id (0-7)> <rd-wr ratio (0-1)> scale\n");
+    if(argc != 5){
+        fprintf(stderr, "Usage :: ./generator <pattern_id (0-7)> <rd-wr ratio (0-1)> scale repeat\n");
         return -1;
     }
 
@@ -331,19 +334,23 @@ int main (int argc, char *argv[]) {
     fprintf(stdout, "initializing square matrix with dimension : %d \n", 1024*mat_size);
 
     mat = AllocateMatrix(64*mat_size, 64*mat_size);
-    InitMatrix(mat);
+    //InitMatrix(mat);
 
     int pattern_id = atoi(argv[1]);
     double rd_wr_ratio = atof(argv[2]);
     int scale = atoi(argv[3]);
+    int k_thres = atoi(argv[4]);
 
     fprintf(stdout, "pattern id : %d rd_wr ratio : %.2f \n", pattern_id, rd_wr_ratio);
 
     int k;
+    int sum = 0;
+
     StartTimer();
-    for(k = 0 ; k < 4; k++)
-        AccessMatrix(mat, pattern_id, rd_wr_ratio, scale);
+    for(k = 0 ; k < k_thres; k++) {
+        sum += AccessMatrix(mat, pattern_id, rd_wr_ratio, scale);
+    }
     StopTimer();
 
-    return 0;
+    return sum;
 }
