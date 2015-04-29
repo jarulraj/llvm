@@ -566,26 +566,74 @@ primitive.
 
 \section{Experimental Setup}
 
-To evaluate the effectiveness of our approach, we measure the runtime performance of the application utilizing new DRAM acces primitives using a prototype.
+\textbf{Compiler Pass:} We implemented our compiler pass in the LLVM
+3.5 framework. The pass analyses the application's data structure access
+patterns with the help of scalar evolution-related (SCEV)
+functions~\cite{llvm15}. 
+We then use the cost model to find the optimal DRAM access primitive 
+among the ones shown in~\cref{fig:pattern} for the given hybrid data access
+pattern.
 
-\begin{itemize}
+\textbf{Gem5:} Gem5 simulator is a configurable simulation framework that can
+be used to emulate the novel DRAM access primitives. We used a modified version
+of Gem5, that takes in \textit{pattern id} in the unused address bits from the
+prefetch instruction to emulate the access pattern. The access function is 
+shown below for clarity :
 
-  \item \textbf{Compiler Pass:} We implemented an LLVM 3.5 compiler pass that analyses data structure access patterns. We utilize programmer annotation support to pin-point the data structrues that we wish to analyze, and make use of Scalar Evolution (SCEV) pass provided by LLVM framework to examine the access indices. We then cross reference the result with available patterns from DRAM primitives \ref{fig:pattern} to compute the pattern id that maximizes the performance.
-  \item \textbf{Gem 5:} Gem5 simulator is a configurable simulation framework that can emulate novel DRAM access primitives. We use modified version of Gem5, that takes in pattern id from unused address bits from the prefetch instruction and emulates the access pattern. However, due to functional limitations we were not to obtain the statistics we needed for the evaluation and we decided to measure performance directly using sets of test applications.
-\end{itemize}
+\begin{lstlisting}[caption={Gem5 DRAM Access Primitive
+Simulation}]
 
-\begin{table}[t]
+#define PATTERN_ROW 0
+#define PATTERN_COL 7
+
+static __attribute__((aligned(512))) long table[];
+
+// ACCESS PRIMITIVES
+static long gather(long *table, int index, int pattern) {
+    char *p = (char*)&table[index] + pattern;
+    long result;
+    // PREFETCH INSTRUCTION
+    asm("prefetch %1\n" : "=a"(result) : "m"(*p) : );
+    return result;
+}
+
+int main() {
+
+	// ROW-ORIENTED ACCESS
+	for (int i = 0; i < 16; i++) {
+		printf("table[%2d] by tuple: %016lx\n", i, gather(table, i, PATTERN_ROW));
+	}
+
+	// COLUMN-ORIENTED ACCESS
+	for (int i = 0; i < 16; i++) {
+		printf("table[%2d] by field: %016lx\n", i, gather(table, i, PATTERN_COL));
+	}
+
+}
+\end{lstlisting}
+ 
+The changes in Gem5 are being made in tandem with this work. Due to functional
+limitations of the current prototype, we were not able to obtain the statistics 
+required for evaluating our benchmarks. 
+We therefore decided to estimate the performance benefits directly on real
+hardware using a matrix library that emulates different DRAM access primitives.
+The specifications of the system that we used in our evaluation is shown
+in~\cref{tab:spec}.
+
+\begin{table}
     \centering
-    \begin{tabular}{c|c}
-  \textbf{CPU} & \\
-    \textbf{RAM} & \\
-    \textbf{HDD} & \\
-
-  \end{tabular}
+    \begin{tabular}{l|l}
+    \textbf{CPU} & Intel Xeon CPU E5-2420 v2 $@$ 2.20GHz\\
+    \textbf{Number of CPU(s)} & 12 \\
+    \textbf{Threads per core} & 2 \\
+    \textbf{L1d cache} & 32 KB \\
+	\textbf{L1i cache} & 32 KB \\
+	\textbf{L2 cache} & 256 KB \\
+	\textbf{L3 cache} & 15 MB \\
+  	\end{tabular}
     \caption{
-        \textbf{System Specification} --
-        The specification of the system used for evaluation
-    }
+        \textbf{System Specification} -- The hardware specification of the
+        system used for evaluation }
     \label{tab:spec}
 \end{table}
 
